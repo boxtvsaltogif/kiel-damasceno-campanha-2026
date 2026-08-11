@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Central da Campanha | Kiel Damasceno 2026</title>
   <meta name="description" content="Gestão operacional da pré-campanha e campanha de Kiel Damasceno a deputado estadual em 2026.">
-  <meta name="theme-color" content="#16304a">
+  <meta name="theme-color" content="#1800ac">
   <meta property="og:title" content="Central da Campanha | Kiel Damasceno 2026">
   <meta property="og:description" content="Jornada operacional de 55 dias, dados agregados e conformidade eleitoral.">
   <link rel="canonical" href="https://boxtvsaltogif.github.io/kiel-damasceno-campanha-2026/">
@@ -13,6 +13,24 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <section id="login-screen" class="auth-screen" aria-labelledby="login-title">
+    <article class="auth-card">
+      <img src="logo-kiel-oficial.png" alt="Kiel Damasceno" width="160" height="80">
+      <p class="eyebrow">Central da Campanha 2026</p>
+      <h1 id="login-title">Entrada da equipe</h1>
+      <p>Use seu e-mail e sua senha. Cada pessoa terá seu próprio acesso e suas ações ficarão registradas (auditoria).</p>
+      <form id="login-form" class="auth-form">
+        <label>E-mail<input id="login-email" name="email" type="email" autocomplete="username" required placeholder="nome@exemplo.com"></label>
+        <label>Senha<input id="login-password" name="password" type="password" autocomplete="current-password" minlength="8" required placeholder="Mínimo de 8 caracteres"></label>
+        <button class="primary" type="submit">Entrar</button>
+        <button class="secondary" id="signup-button" type="button">Ativar primeiro acesso</button>
+        <button class="text-button" id="recover-button" type="button">Esqueci minha senha</button>
+      </form>
+      <p id="auth-message" class="auth-message" role="status" aria-live="polite">Somente e-mails cadastrados pelo administrador conseguem abrir o sistema.</p>
+    </article>
+  </section>
+
+  <div id="app-shell" hidden>
   <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
   <header class="topbar">
     <a class="brand" href="#jornada" aria-label="Central da Campanha, início">
@@ -28,7 +46,10 @@
       <a href="#auditoria" data-view="auditoria">Auditoria</a>
       <a href="#configuracoes" data-view="configuracoes">Configurações</a>
     </nav>
-    <label class="user-switch">Operador (quem está usando)<select id="current-user" aria-label="Operador atual"></select></label>
+    <div class="account-menu" aria-label="Usuário conectado">
+      <span><small>Usuário conectado</small><strong id="current-user-display">Carregando...</strong></span>
+      <button id="logout-button" class="text-button" type="button">Sair</button>
+    </div>
   </header>
 
   <main id="conteudo">
@@ -177,15 +198,14 @@
     </section>
 
     <section id="auditoria" class="view" aria-labelledby="audit-title" hidden>
-      <div class="page-heading"><p class="eyebrow">10 perfis e histórico</p><h1 id="audit-title">Quem inseriu, alterou ou excluiu.</h1><p>A prévia registra o operador escolhido em cada ação. Para publicação real, estes perfis deverão virar contas protegidas em servidor (autenticação).</p></div>
-      <div class="notice warning"><strong>Limite da prévia:</strong> estes são perfis locais para testar o fluxo, não credenciais seguras. Senhas reais e controle de acesso exigem banco online e servidor.</div>
-      <div class="dashboard-grid"><article class="card"><h2>10 operadores disponíveis</h2><div id="user-list" class="user-list"></div></article><article class="card"><h2>O que fica registrado</h2><ul class="do-dont"><li class="do">Inclusão e exclusão de medições.</li><li class="do">Conclusão de tarefas e salvamento de respostas.</li><li class="do">Alteração de identidade e nomes dos operadores.</li><li class="dont">O histórico não deve guardar senhas nem dados sensíveis.</li></ul></article></div>
+      <div class="page-heading"><p class="eyebrow">10 acessos e histórico</p><h1 id="audit-title">Quem inseriu, alterou ou excluiu.</h1><p>Cada integrante entra com uma credencial individual (autenticação). O sistema registra as ações sem guardar senhas.</p></div>
+      <div class="notice safe"><strong>Proteção ativa:</strong> os dados compartilhados exigem login e são protegidos por regras no banco (RLS — segurança por linha).</div>
+      <div class="dashboard-grid"><article class="card"><h2>Acessos autorizados</h2><div id="user-list" class="user-list"></div></article><article class="card"><h2>O que fica registrado</h2><ul class="do-dont"><li class="do">Inclusão e exclusão de medições.</li><li class="do">Conclusão de tarefas e salvamento de respostas.</li><li class="do">Alterações estratégicas e de identidade.</li><li class="dont">O histórico não guarda senhas nem dados sensíveis.</li></ul></article></div>
       <article class="card table-wrap"><div class="section-title"><div><p class="eyebrow">Trilha de auditoria</p><h2>Histórico de atividades</h2></div><button id="export-audit" class="secondary" type="button">Baixar histórico CSV</button></div><table><thead><tr><th>Data e hora</th><th>Operador</th><th>Ação</th><th>Detalhe</th></tr></thead><tbody id="audit-table"></tbody></table></article>
     </section>
 
     <section id="configuracoes" class="view" aria-labelledby="settings-title" hidden>
-      <div class="page-heading"><p class="eyebrow">Configurações locais</p><h1 id="settings-title">Identidade e segurança da prévia.</h1><p>Logo, slogan e paleta ainda precisam ser confirmados no perfil oficial. A interface usa uma identidade provisória neutra.</p></div>
-      <div class="notice warning"><strong>Identidade não confirmada:</strong> a busca pública não permitiu verificar com segurança o Instagram oficial e sua arte atual. Nenhum slogan foi inventado.</div>
+      <div class="page-heading"><p class="eyebrow">Configurações</p><h1 id="settings-title">Identidade, acessos e cópia de segurança.</h1><p>O azul, o verde e o logo seguem os arquivos oficiais fornecidos. O slogan só deve ser preenchido depois da confirmação da campanha.</p></div>
       <form id="settings-form" class="card form-grid">
         <h2>Identidade da campanha</h2>
         <label>Nome exibido<input name="candidateName" maxlength="60" value="Kiel Damasceno"></label>
@@ -195,15 +215,26 @@
         <button class="primary" type="submit">Aplicar identidade</button>
       </form>
       <article class="card data-actions">
-        <h2>Cópia de segurança</h2><p>Exporte periodicamente. Os dados desta prévia ficam somente neste navegador e podem ser perdidos se os dados do site forem apagados.</p>
+        <h2>Cópia de segurança</h2><p>Os dados ficam no banco compartilhado. A exportação continua disponível como cópia adicional para conferência e contingência.</p>
         <div><button id="export-json" class="secondary" type="button">Baixar cópia JSON</button><label class="file-button">Restaurar cópia<input id="import-json" type="file" accept="application/json"></label></div>
       </article>
-      <form id="users-form" class="card form-grid"><h2>Nome dos 10 operadores</h2><div id="user-fields" class="user-fields"></div><button class="primary" type="submit">Salvar nomes</button></form>
+      <form id="users-form" class="card form-grid">
+        <h2>Administrar os 10 acessos</h2>
+        <p class="form-intro">O administrador cadastra o e-mail primeiro. Depois, a pessoa usa “Ativar primeiro acesso” na tela de entrada e cria sua própria senha.</p>
+        <label>Nome da pessoa<input name="displayName" maxlength="60" required placeholder="Ex.: Coordenação de campo"></label>
+        <label>E-mail autorizado<input name="email" type="email" required placeholder="nome@exemplo.com"></label>
+        <label>Nível de acesso<select name="role" required><option value="operador">Operador — pode preencher</option><option value="leitura">Leitura — apenas consulta</option><option value="admin">Administrador — gerencia acessos</option></select></label>
+        <button class="primary" type="submit">Adicionar ou atualizar acesso</button>
+        <div id="user-fields" class="user-fields"></div>
+      </form>
     </section>
   </main>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <footer><p>Central operacional interna · Kiel Damasceno 2026</p><p>Dados agregados · Revisão jurídica obrigatória · Última revisão de referências: agosto de 2026</p></footer>
+  </div>
+  <script src="supabase-config.js" defer></script>
+  <script src="auth.js" defer></script>
   <script src="app.js" defer></script>
 </body>
 </html>
