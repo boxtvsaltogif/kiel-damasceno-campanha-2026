@@ -10,7 +10,7 @@
   <meta property="og:description" content="Jornada operacional de 55 dias, dados agregados e conformidade eleitoral.">
   <link rel="canonical" href="https://boxtvsaltogif.github.io/kiel-damasceno-campanha-2026/">
   <link rel="icon" href="logo-kiel-oficial.png" type="image/png">
-  <link rel="stylesheet" href="styles.css?v=4">
+  <link rel="stylesheet" href="styles.css?v=5">
 </head>
 <body>
   <section id="login-screen" class="auth-screen" aria-labelledby="login-title">
@@ -40,7 +40,7 @@
     <button class="menu-button" type="button" aria-expanded="false" aria-controls="main-nav">Menu</button>
     <nav id="main-nav" aria-label="Navegação principal">
       <a href="#jornada" data-view="jornada">Jornada</a>
-      <a href="#base" data-view="base">Base territorial</a>
+      <a href="#base" data-view="base">Demografia</a>
       <a href="#alcance" data-view="alcance">Alcance</a>
       <a href="#leis" data-view="leis">Leis</a>
       <a href="#auditoria" data-view="auditoria">Auditoria</a>
@@ -60,10 +60,15 @@
           <h1 id="jornada-title">Da organização à prestação de contas, sem perder o próximo passo.</h1>
           <p>Meta administrativa: <strong>60 mil votos</strong>. Ela orienta capacidade e acompanhamento; não é previsão nem promessa de resultado eleitoral.</p>
         </div>
-        <div class="hero-progress" aria-label="Progresso geral">
-          <strong id="progress-value">0%</strong>
-          <span id="progress-label">0 de 0 tarefas concluídas</span>
-          <div class="progress-track"><span id="progress-bar"></span></div>
+        <div class="hero-side">
+          <figure class="hero-badge" aria-label="Selo Tem projeto é Kiel">
+            <img src="projeto-e-kiel.webp" width="284" height="279" alt="Kiel Damasceno no selo circular Tem projeto é Kiel" decoding="async" fetchpriority="high">
+          </figure>
+          <div class="hero-progress" aria-label="Progresso geral">
+            <strong id="progress-value">0%</strong>
+            <span id="progress-label">0 de 0 tarefas concluídas</span>
+            <div class="progress-track"><span id="progress-bar"></span></div>
+          </div>
         </div>
       </div>
 
@@ -94,18 +99,81 @@
       </div>
     </section>
 
-    <section id="base" class="view" aria-labelledby="base-title" hidden>
-      <div class="page-heading"><p class="eyebrow">Dados já conferidos</p><h1 id="base-title">Base territorial pronta para consulta.</h1><p>Os números ficam acompanhados do ano e do selo de confiança. População não é eleitorado (pessoas aptas a votar).</p></div>
-      <div class="notice warning"><strong>Eleitorado municipal de 2026:</strong> ainda não confirmado nesta base. Não calculamos eleitorado usando população. O total só será exibido depois da validação direta no TSE ou TRE-SP.</div>
-      <div class="kpi-grid territorial-kpis"><article><span>População estimada das 5 cidades</span><strong>693.074</strong><small>Estimativa oficial IBGE 2025</small></article><article><span>Cidades acompanhadas</span><strong>5</strong><small>Região definida no projeto</small></article><article><span>Eleitorado 2026 consolidado</span><strong>Não confirmado</strong><small>Nenhuma estimativa silenciosa</small></article><article><span>Última revisão</span><strong>10/08/2026</strong><small>Fontes públicas oficiais</small></article></div>
-      <div class="card table-wrap">
-        <div class="section-title"><div><p class="eyebrow">Demografia e economia</p><h2>Comparação das cinco cidades</h2></div></div>
-        <table class="territory-table"><thead><tr><th>Cidade</th><th>População Censo 2022</th><th>Estimativa 2025</th><th>Densidade 2022</th><th>Escolarização 6–14</th><th>PIB por pessoa 2023</th><th>Fonte</th></tr></thead><tbody id="territory-table"></tbody></table>
-        <p class="chart-help">PIB por pessoa (PIB per capita) ajuda a descrever a economia municipal, mas não informa a renda de cada morador.</p>
+    <section id="base" class="view demography-view" aria-labelledby="base-title" hidden>
+      <div class="page-heading">
+        <p class="eyebrow">Dados oficiais conferidos</p>
+        <h1 id="base-title">Demografia e economia das cidades.</h1>
+        <p>Compare os municípios sem procurar os dados toda vez. Cada número mostra o ano e leva à página oficial de origem.</p>
       </div>
-      <div class="dashboard-grid">
-        <article class="card"><p class="eyebrow">Leitura simples</p><h2>O que já podemos comparar</h2><ul class="do-dont"><li class="do">Tamanho e densidade das cidades.</li><li class="do">Diferenças gerais de atividade econômica.</li><li class="do">Cobertura territorial registrada pela campanha.</li><li class="dont">Não podemos dizer como uma pessoa votará.</li></ul></article>
-        <article class="card"><p class="eyebrow">Fila de atualização</p><h2>Dados que exigem nova carga oficial</h2><p>Pirâmide etária, renda territorial, escolaridade adulta, emprego, mobilidade, internet, eleitorado 2026, zonas, seções e abstenção histórica.</p><p class="chart-help">Eles já fazem parte do sistema, mas permanecem como “não carregados” até a fonte primária ser conferida. Isso evita decisões com números incorretos.</p></article>
+      <div class="notice safe"><strong>Como ler:</strong> o asterisco (*) identifica estimativa, aproximação ou cálculo explicado. Os demais valores são resultados oficiais divulgados para o ano indicado. População não é eleitorado (pessoas aptas a votar).</div>
+      <div class="kpi-grid territorial-kpis">
+        <article><span>População estimada das 5 cidades</span><strong>693.074*</strong><small>IBGE 2025 · cidades da campanha</small></article>
+        <article><span>Cidades principais</span><strong>5</strong><small>Região definida no projeto</small></article>
+        <article><span>Cidades de comparação</span><strong>2</strong><small>Sorocaba e Campinas</small></article>
+        <article><span>Última conferência</span><strong>11/08/2026</strong><small>Fontes públicas oficiais</small></article>
+      </div>
+
+      <div class="demography-toolbar" aria-label="Escolher cidades exibidas">
+        <span><strong>Mostrar:</strong></span>
+        <button class="scope-button active" type="button" data-demography-scope="core" aria-pressed="true">5 cidades da campanha</button>
+        <button class="scope-button" type="button" data-demography-scope="all" aria-pressed="false">Todas as 7 cidades</button>
+        <button class="scope-button" type="button" data-demography-scope="reference" aria-pressed="false">2 cidades de comparação</button>
+      </div>
+
+      <div class="indicator-section-heading"><p class="eyebrow">Pessoas e território</p><h2>Demografia e qualidade de vida</h2><p>Indicadores para entender tamanho, concentração, escolarização e condições gerais das cidades.</p></div>
+      <div id="demography-charts" class="indicator-grid" aria-live="polite"></div>
+
+      <div class="indicator-section-heading"><p class="eyebrow">Eleição e sociedade</p><h2>Eleitorado, contexto político e segurança</h2><p>Dados agregados (totais por cidade), sem perfis individuais nem atributos sensíveis.</p></div>
+      <div id="political-charts" class="indicator-grid" aria-live="polite"></div>
+
+      <div class="indicator-section-heading"><p class="eyebrow">Economia municipal</p><h2>Produção, emprego formal, indústria e empresas</h2><p>Os indicadores econômicos descrevem o município; não representam renda individual nem intenção de voto.</p></div>
+      <div id="economy-charts" class="indicator-grid" aria-live="polite"></div>
+
+      <article class="card demography-table-card">
+        <div class="section-title"><div><p class="eyebrow">Tabela completa</p><h2>Todos os indicadores em uma visão</h2></div></div>
+        <p class="chart-help">No celular, cada linha vira um cartão para evitar barra de rolagem horizontal.</p>
+        <div id="demography-table" class="demography-table" role="table" aria-label="Comparação dos indicadores por cidade"></div>
+      </article>
+
+      <article class="card source-card">
+        <div class="section-title"><div><p class="eyebrow">Fontes, referências e anos</p><h2>De onde saiu cada número</h2></div></div>
+        <p class="chart-help">Clique no número da fonte para abrir diretamente a página oficial da cidade. O IBGE informa, na mesma página, a fonte primária (origem inicial dos dados) de cada indicador.</p>
+        <ol id="demography-sources" class="demography-source-list"></ol>
+        <div class="method-links" aria-label="Referências metodológicas oficiais">
+          <a href="https://www.ibge.gov.br/estatisticas/sociais/populacao/22827-censo-demografico-2022.html" target="_blank" rel="noopener noreferrer">Censo Demográfico 2022</a>
+          <a href="https://ftp.ibge.gov.br/Estimativas_de_Populacao/Estimativas_2025/estimativa_dou_2025.pdf" target="_blank" rel="noopener noreferrer">Estimativas populacionais 2025</a>
+          <a href="https://www.ibge.gov.br/estatisticas/economicas/contas-nacionais/9088-produto-interno-bruto-dos-municipios.html" target="_blank" rel="noopener noreferrer">PIB dos Municípios 2022–2023</a>
+          <a href="https://dadosabertos.tse.jus.br/dataset/eleitorado-2024" target="_blank" rel="noopener noreferrer">Eleitorado TSE 2024</a>
+          <a href="https://sidra.ibge.gov.br/pesquisa/cempre/tabelas" target="_blank" rel="noopener noreferrer">CEMPRE 2024</a>
+          <a href="https://www.ssp.sp.gov.br/estatistica/dados-mensais" target="_blank" rel="noopener noreferrer">SSP-SP · taxas e ocorrências</a>
+        </div>
+      </article>
+
+      <div class="dashboard-grid demography-notes">
+        <article class="card">
+          <p class="eyebrow">Leitura responsável</p>
+          <h2>O que estes dados permitem entender</h2>
+          <ul class="do-dont">
+            <li class="do">Comparar tamanho, densidade, escolarização e contexto econômico.</li>
+            <li class="do">Planejar deslocamento, agenda e presença territorial usando dados agregados (totais por cidade).</li>
+            <li class="dont">Não mostram intenção de voto nem autorizam conclusões sobre pessoas.</li>
+            <li class="dont">Não devem ser usados para microdirecionamento (mensagens diferentes para grupos muito específicos) por religião, raça, saúde ou outro dado sensível.</li>
+          </ul>
+        </article>
+        <article class="card audit-note">
+          <p class="eyebrow">Auditoria da planilha recebida</p>
+          <h2>O que foi corrigido ou não entrou</h2>
+          <ul>
+            <li>Indaiatuba no Censo 2022: <strong>255.748</strong>, e não 255.739.</li>
+            <li>IDHM de Itu: <strong>0,773</strong>, e não 0,794.</li>
+            <li>PIB por pessoa foi atualizado de 2021 para <strong>2023</strong>.</li>
+            <li>Eleitorado e partidos vencedores foram substituídos pelos resultados oficiais do TSE de 2024.</li>
+            <li>“CNPJs ativos” aparece como aproximação (*) do CEMPRE 2024, pois empresas e organizações atuantes não são exatamente o cadastro da Receita Federal.</li>
+            <li>Emprego formal / população é um cálculo aproximado (*) e não deve ser chamado de taxa de emprego dos moradores.</li>
+            <li>A desocupação municipal permanece visível como “não disponível”: a PNAD Contínua não publica uma taxa oficial comparável para cada cidade.</li>
+            <li>Homicídios usam a taxa SSP-SP 2025; Cabreúva e Porto Feliz têm cálculo próprio (*) porque a SSP divulga os casos, mas não apresenta a taxa pronta.</li>
+          </ul>
+        </article>
       </div>
     </section>
 
@@ -235,6 +303,6 @@
   </div>
   <script src="supabase-config.js?v=4" defer></script>
   <script src="auth.js?v=4" defer></script>
-  <script src="app.js?v=4" defer></script>
+  <script src="app.js?v=5" defer></script>
 </body>
 </html>

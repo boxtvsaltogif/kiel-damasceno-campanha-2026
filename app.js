@@ -124,12 +124,50 @@ const guidedSteps={
 };
 
 const territoryData=[
-  {city:'Indaiatuba',census:255748,estimate:269657,density:'820,90',school:'98,62%',pib:'R$ 110.518,41',url:'https://www.ibge.gov.br/cidades-e-estados/sp/indaiatuba.html'},
-  {city:'Itu',census:168240,estimate:175047,density:'262,58',school:'96,30%',pib:'R$ 83.288,93',url:'https://www.ibge.gov.br/cidades-e-estados/sp/itu.html'},
-  {city:'Salto',census:134319,estimate:141111,density:'1.009,48',school:'97,86%',pib:'R$ 85.609,32',url:'https://www.ibge.gov.br/cidades-e-estados/sp/salto.html'},
-  {city:'Porto Feliz',census:56497,estimate:58605,density:'101,48',school:'99,19%',pib:'R$ 89.687,04',url:'https://www.ibge.gov.br/cidades-e-estados/sp/porto-feliz.html'},
-  {city:'Cabreúva',census:47011,estimate:48654,density:'180,65',school:'99,97%',pib:'R$ 154.027,39',url:'https://www.ibge.gov.br/cidades-e-estados/sp/cabreuva.html'}
+  {city:'Salto',group:'core',source:1,url:'https://www.ibge.gov.br/cidades-e-estados/sp/salto.html',census:134319,estimate:141111,area:133.057,density:1009.48,school:97.86,idhm:.780,mortality:18.38,pib:85609.32,electorate:93753,mayorParty:'PP',illiteracy:2.59,populationGrowth:27.30,gdpTotal:11.498959,formalRatio:24.28,industryVab:37.68,activeCompanies:6865,homicideRate:2.16,homicideEstimate:false},
+  {city:'Itu',group:'core',source:2,url:'https://www.ibge.gov.br/cidades-e-estados/sp/itu.html',census:168240,estimate:175047,area:640.719,density:262.58,school:96.30,idhm:.773,mortality:10.93,pib:83288.93,electorate:130162,mayorParty:'REPUBLICANOS',illiteracy:3.49,populationGrowth:9.14,gdpTotal:14.012530,formalRatio:36.62,industryVab:32.78,activeCompanies:11357,homicideRate:5.90,homicideEstimate:false},
+  {city:'Indaiatuba',group:'core',source:3,url:'https://www.ibge.gov.br/cidades-e-estados/sp/indaiatuba.html',census:255748,estimate:269657,area:311.545,density:820.90,school:98.62,idhm:.788,mortality:7.12,pib:110518.41,electorate:184033,mayorParty:'MDB',illiteracy:2.12,populationGrowth:26.85,gdpTotal:28.264863,formalRatio:34.63,industryVab:38.10,activeCompanies:20836,homicideRate:1.90,homicideEstimate:false},
+  {city:'Cabreúva',group:'core',source:4,url:'https://www.ibge.gov.br/cidades-e-estados/sp/cabreuva.html',census:47011,estimate:48654,area:260.234,density:180.65,school:99.97,idhm:.738,mortality:8.22,pib:154027.39,electorate:36598,mayorParty:'PL',illiteracy:3.70,populationGrowth:13.00,gdpTotal:7.240981,formalRatio:41.36,industryVab:38.56,activeCompanies:2565,homicideRate:8.22,homicideEstimate:true},
+  {city:'Porto Feliz',group:'core',source:5,url:'https://www.ibge.gov.br/cidades-e-estados/sp/porto-feliz.html',census:56497,estimate:58605,area:556.706,density:101.48,school:99.19,idhm:.758,mortality:14.21,pib:89687.04,electorate:40691,mayorParty:'REPUBLICANOS',illiteracy:3.55,populationGrowth:15.55,gdpTotal:5.067049,formalRatio:29.96,industryVab:30.09,activeCompanies:5119,homicideRate:3.41,homicideEstimate:true},
+  {city:'Sorocaba',group:'reference',source:6,url:'https://www.ibge.gov.br/cidades-e-estados/sp/sorocaba.html',census:723682,estimate:762172,area:449.872,density:1608.64,school:98.66,idhm:.798,mortality:10.86,pib:81273.66,electorate:527772,mayorParty:'REPUBLICANOS',illiteracy:2.08,populationGrowth:23.36,gdpTotal:58.816286,formalRatio:31.08,industryVab:32.50,activeCompanies:49885,homicideRate:6.73,homicideEstimate:false},
+  {city:'Campinas',group:'reference',source:7,url:'https://www.ibge.gov.br/cidades-e-estados/sp/campinas.html',census:1139047,estimate:1187974,area:794.570,density:1433.54,school:98.17,idhm:.805,mortality:8.65,pib:80741.47,electorate:884726,mayorParty:'REPUBLICANOS',illiteracy:2.41,populationGrowth:5.46,gdpTotal:91.968328,formalRatio:38.36,industryVab:18.84,activeCompanies:93590,homicideRate:6.84,homicideEstimate:false}
 ];
+const territorySources=[
+  {id:8,label:'TSE · Eleitorado 2024',url:'https://dadosabertos.tse.jus.br/dataset/eleitorado-2024',detail:'Eleitorado apto na eleição municipal de 2024, somado por município a partir do arquivo de locais de votação.'},
+  {id:9,label:'TSE · Candidaturas e resultados 2024',url:'https://dadosabertos.tse.jus.br/dataset/candidatos-2024',detail:'Partido da candidatura eleita para prefeito no primeiro ou segundo turno de 2024.'},
+  {id:10,label:'IBGE/SIDRA · Alfabetização, tabela 9543',url:'https://sidra.ibge.gov.br/tabela/9543',detail:'Taxa de alfabetização das pessoas de 15 anos ou mais no Censo 2022. O analfabetismo foi calculado como 100 menos a taxa de alfabetização.'},
+  {id:11,label:'IBGE/SIDRA · População, tabela 200',url:'https://sidra.ibge.gov.br/tabela/200',detail:'População dos Censos 2010 e 2022. Crescimento calculado pela diferença percentual entre os dois censos.'},
+  {id:12,label:'IBGE/SIDRA · PIB dos Municípios, tabela 5938',url:'https://sidra.ibge.gov.br/tabela/5938',detail:'PIB total e por pessoa em 2023. A participação da indústria no valor adicionado bruto (VAB) usa 2021, último ano disponível desta divisão setorial.'},
+  {id:13,label:'IBGE/SIDRA · CEMPRE, tabela 9509',url:'https://sidra.ibge.gov.br/tabela/9509',detail:'Pessoal ocupado assalariado e empresas e organizações atuantes em 2024. São registros formais localizados no município.'},
+  {id:14,label:'IBGE · PNAD Contínua',url:'https://sidra.ibge.gov.br/home/pnadct/',detail:'A pesquisa mede desocupação para Brasil, estados e recortes selecionados, mas não produz taxa oficial comparável para cada um destes municípios.'},
+  {id:15,label:'SSP-SP · Dados mensais e taxas',url:'https://www.ssp.sp.gov.br/estatistica/dados-mensais',detail:'Taxa de homicídios de 2025. Cabreúva e Porto Feliz foram calculadas com ocorrências anuais da SSP-SP e população estimada do IBGE.'}
+];
+const demographyIndicators=[
+  {key:'estimate',label:'População estimada',year:2025,agency:'IBGE',estimate:true,help:'É uma projeção oficial de quantas pessoas moram no município. Como não é uma contagem feita casa por casa, recebe asterisco (*).'},
+  {key:'census',label:'População no Censo',year:2022,agency:'IBGE',help:'É a quantidade de moradores contada pelo Censo Demográfico (levantamento amplo feito pelo IBGE).'},
+  {key:'density',label:'Densidade demográfica',year:2022,agency:'IBGE',help:'Mostra quantas pessoas vivem, em média, em cada quilômetro quadrado. Ajuda a entender se a cidade é mais concentrada ou espalhada.'},
+  {key:'area',label:'Área territorial',year:2025,agency:'IBGE',help:'É o tamanho oficial do território do município, medido em quilômetros quadrados.'},
+  {key:'school',label:'Escolarização de 6 a 14 anos',year:2022,agency:'IBGE',help:'É a porcentagem das crianças e adolescentes de 6 a 14 anos que frequentam o ensino regular.'},
+  {key:'idhm',label:'IDHM',year:2010,agency:'PNUD via IBGE',help:'O Índice de Desenvolvimento Humano Municipal (IDHM) resume longevidade, educação e renda. Vai de 0 a 1; quanto maior, melhor. O último valor municipal consolidado é de 2010.'},
+  {key:'mortality',label:'Mortalidade infantil',year:2023,agency:'DATASUS via IBGE',lowerBetter:true,help:'É o número de óbitos de crianças menores de 1 ano para cada mil nascidos vivos. Neste indicador, um número menor é melhor.'}
+];
+const politicalIndicators=[
+  {key:'electorate',label:'Eleitores ativos',year:2024,agency:'TSE',sourceId:8,help:'É o total de pessoas aptas a votar no município na eleição de 2024. População e eleitorado são números diferentes.'},
+  {key:'mayorParty',label:'Partido eleito para a prefeitura',year:2024,agency:'TSE',sourceId:9,type:'categorical',help:'Mostra o partido da candidatura vencedora para prefeito em 2024. Não significa que todos os moradores apoiem esse partido.'},
+  {key:'illiteracy',label:'Analfabetismo (15 anos ou mais)',year:2022,agency:'IBGE',sourceId:10,format:'percent',lowerBetter:true,help:'É a parcela das pessoas de 15 anos ou mais que não consegue ler e escrever um bilhete simples. O valor foi calculado a partir da taxa oficial de alfabetização.'},
+  {key:'populationGrowth',label:'Crescimento populacional (2010–2022)',year:'2010–2022',agency:'IBGE',sourceId:11,format:'percent',help:'Compara a população contada no Censo 2010 com a contada no Censo 2022. É crescimento acumulado no período, não crescimento por ano.'},
+  {key:'unemployment',label:'Taxa de desocupação estimada',year:'sem dado municipal',agency:'IBGE/PNAD Contínua',sourceId:14,type:'unavailable',help:'Desocupação é a parcela da força de trabalho que procura emprego e não encontra. A PNAD Contínua não divulga uma taxa oficial comparável para cada uma destas cidades; por isso nenhum percentual foi inventado.'},
+  {key:'homicideRate',label:'Taxa de homicídios (por 100 mil habitantes)',year:2025,agency:'SSP-SP',sourceId:15,format:'rate100k',lowerBetter:true,estimateKey:'homicideEstimate',help:'Indica quantos homicídios ocorreram para cada 100 mil habitantes. Nas cidades pequenas, poucos casos podem mudar bastante a taxa. Cabreúva e Porto Feliz têm cálculo próprio identificado por asterisco.'}
+];
+const economyIndicators=[
+  {key:'gdpTotal',label:'PIB total',year:2023,agency:'IBGE',sourceId:12,format:'currencyBillions',help:'É o valor total dos bens e serviços produzidos no município no ano. Não representa o dinheiro disponível na prefeitura.'},
+  {key:'pib',label:'PIB por pessoa',year:2023,agency:'IBGE',sourceId:12,format:'currency',help:'O PIB per capita (produção econômica dividida pela população) descreve o tamanho médio da economia, mas não é o salário nem a renda de cada morador.'},
+  {key:'formalRatio',label:'Emprego formal / população total',year:'2024/2025',agency:'IBGE/CEMPRE',sourceId:13,format:'percent',estimate:true,help:'É uma aproximação: postos assalariados formais registrados nas empresas em 2024 divididos pela população estimada de 2025. Não é taxa de emprego dos moradores, porque uma pessoa pode trabalhar em outra cidade.'},
+  {key:'industryVab',label:'Participação da indústria no VAB',year:2021,agency:'IBGE',sourceId:12,format:'percent',help:'Mostra quanto a indústria representa no valor adicionado bruto (VAB), isto é, na riqueza gerada pelas atividades econômicas locais. O recorte setorial municipal mais recente disponível é 2021.'},
+  {key:'activeCompanies',label:'CNPJs ativos (aproximado)',year:2024,agency:'IBGE/CEMPRE',sourceId:13,estimate:true,help:'Usa o número de empresas e outras organizações atuantes no CEMPRE como aproximação. Não é uma contagem idêntica ao cadastro de CNPJs ativos da Receita Federal, por isso recebe asterisco.'}
+];
+const allTerritoryIndicators=[...demographyIndicators,...politicalIndicators,...economyIndicators];
+let demographyScope='core';
 const prepLabels=['Terça · 11/08','Terça · 11/08','Terça · 11/08','Quarta · 12/08','Quarta · 12/08','Quarta · 12/08','Quinta · 13/08','Quinta · 13/08'];
 const defaultUsers=Array.from({length:10},(_,i)=>`Operador ${String(i+1).padStart(2,'0')}`);
 const DB_NAME='centralCampanhaKiel',STORE='state';
@@ -149,7 +187,67 @@ function updateProgress(){const total=phases.reduce((n,p)=>n+p.tasks.length,0),d
 function groupMetrics(key){return state.metrics.reduce((a,m)=>{const k=m[key]||'Não identificado';a[k]=(a[k]||0)+Number(m.reach||0);return a},{})}
 function bars(grouped){const max=Math.max(1,...Object.values(grouped));return Object.keys(grouped).length?Object.entries(grouped).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([k,v])=>`<div class="bar-row"><span>${esc(k)}</span><div class="bar-track"><div class="bar-fill" style="width:${v/max*100}%"></div></div><strong>${v.toLocaleString('pt-BR')}</strong></div>`).join(''):'<p class="chart-help">O gráfico aparecerá depois do primeiro registro.</p>'}
 function renderMetrics(){const totals=state.metrics.reduce((a,m)=>({reach:a.reach+Number(m.reach||0),conversations:a.conversations+Number(m.conversations||0),supporters:a.supporters+Number(m.supporters||0)}),{reach:0,conversations:0,supporters:0});document.querySelector('#kpi-reach').textContent=totals.reach.toLocaleString('pt-BR');document.querySelector('#kpi-conversations').textContent=totals.conversations.toLocaleString('pt-BR');document.querySelector('#kpi-supporters').textContent=totals.supporters.toLocaleString('pt-BR');document.querySelector('#kpi-rate').textContent=totals.conversations?`${(totals.supporters/totals.conversations*100).toFixed(1).replace('.',',')}%`:'0%';document.querySelector('#metric-table').innerHTML=state.metrics.length?state.metrics.map((m,i)=>`<tr><td>${new Date(m.date+'T12:00:00').toLocaleDateString('pt-BR')}</td><td>${esc(m.city||'Não identificado')}</td><td>${esc(m.territory)}</td><td>${esc(m.channel||'Outro')}</td><td>${esc(m.approach||'Outro')}</td><td>${Number(m.reach||0).toLocaleString('pt-BR')}</td><td>${esc(m.actor||'Sistema')}</td><td><button class="text-button danger" data-delete-metric="${i}" type="button">Excluir</button></td></tr>`).join(''):'<tr><td colspan="8">Nenhum alcance registrado.</td></tr>';document.querySelector('#bar-chart').innerHTML=bars(groupMetrics('city'));document.querySelector('#channel-chart').innerHTML=bars(groupMetrics('channel'));document.querySelector('#approach-chart').innerHTML=bars(groupMetrics('approach'));const matrix={};state.metrics.forEach(m=>{const k=`${m.city||'Não identificado'}|||${m.approach||'Outro'}`;matrix[k]=(matrix[k]||0)+Number(m.reach||0)});document.querySelector('#city-approach-table').innerHTML=Object.keys(matrix).length?Object.entries(matrix).sort((a,b)=>b[1]-a[1]).map(([k,v])=>{const [city,approach]=k.split('|||');return `<tr><td>${esc(city)}</td><td>${esc(approach)}</td><td>${v.toLocaleString('pt-BR')}</td></tr>`}).join(''):'<tr><td colspan="3">Nenhum dado para comparar.</td></tr>'}
-function renderTerritory(){document.querySelector('#territory-table').innerHTML=territoryData.map(d=>`<tr><td><strong>${d.city}</strong></td><td>${d.census.toLocaleString('pt-BR')}</td><td>${d.estimate.toLocaleString('pt-BR')}</td><td>${d.density} hab./km²</td><td>${d.school}</td><td>${d.pib}</td><td><a href="${d.url}" target="_blank" rel="noopener noreferrer">IBGE</a></td></tr>`).join('')}
+function formatDemographyValue(indicator,value){
+  if(indicator.type==='unavailable')return 'Não disponível';
+  if(indicator.type==='categorical')return esc(value);
+  const options={minimumFractionDigits:0,maximumFractionDigits:0};
+  if(indicator.key==='estimate'||indicator.key==='census'||indicator.key==='electorate'||indicator.key==='activeCompanies')return value.toLocaleString('pt-BR',options);
+  if(indicator.key==='density')return `${value.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})} hab./km²`;
+  if(indicator.key==='area')return `${value.toLocaleString('pt-BR',{minimumFractionDigits:3,maximumFractionDigits:3})} km²`;
+  if(indicator.key==='school'||indicator.format==='percent')return `${value.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}%`;
+  if(indicator.key==='idhm')return value.toLocaleString('pt-BR',{minimumFractionDigits:3,maximumFractionDigits:3});
+  if(indicator.key==='pib'||indicator.format==='currency')return value.toLocaleString('pt-BR',{style:'currency',currency:'BRL',minimumFractionDigits:2});
+  if(indicator.format==='currencyBillions')return `R$ ${value.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})} bi`;
+  if(indicator.format==='rate100k')return `${value.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})} por 100 mil`;
+  if(indicator.key==='mortality')return `${value.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})} por mil`;
+  return value.toLocaleString('pt-BR');
+}
+function demographySourceLink(city,label){return `<a class="source-index" href="${city.url}" target="_blank" rel="noopener noreferrer" aria-label="Fonte ${city.source}: IBGE ${esc(city.city)}">[${city.source}]${label||''}</a>`}
+function commonTerritorySource(id){return territorySources.find(source=>source.id===id)}
+function territorySourceLink(indicator,city){
+  if(!indicator.sourceId)return demographySourceLink(city);
+  const source=commonTerritorySource(indicator.sourceId);
+  return `<a class="source-index" href="${source.url}" target="_blank" rel="noopener noreferrer" aria-label="Fonte ${source.id}: ${esc(source.label)}">[${source.id}]</a>`;
+}
+function isTerritoryEstimate(indicator,city){return Boolean(indicator.estimate||(indicator.estimateKey&&city[indicator.estimateKey]))}
+function territoryDisplayValue(indicator,city){
+  const value=formatDemographyValue(indicator,city[indicator.key]);
+  return `${value}${isTerritoryEstimate(indicator,city)?'*':''}`;
+}
+function renderTerritoryIndicator(indicator,index,cities){
+  const sourceRange=indicator.sourceId?String(indicator.sourceId):cities.map(city=>city.source).sort((a,b)=>a-b).join(', ');
+  const heading=`<div class="indicator-heading"><div><span class="indicator-year">${indicator.year} · ${esc(indicator.agency)}${indicator.estimate?' · cálculo aproximado':''}</span><h2>${esc(indicator.label)} <span class="help-wrap"><button class="help-button compact" type="button" aria-label="Explicação simples de ${esc(indicator.label)}" aria-expanded="false" aria-describedby="indicator-help-${index}" data-help-button>?</button><span class="question-help" id="indicator-help-${index}" role="tooltip">${esc(indicator.help)}</span></span></h2></div><span class="indicator-sources" aria-label="Fontes usadas">Fonte ${sourceRange}</span></div>`;
+  if(indicator.type==='unavailable'){
+    const source=commonTerritorySource(indicator.sourceId);
+    return `<article class="card indicator-card indicator-unavailable">${heading}<div class="unavailable-message"><strong>Não há taxa municipal oficial comparável.</strong><p>A PNAD Contínua não publica esse indicador para cada uma das sete cidades. Manter o campo como “não disponível” evita uma estimativa sem base.</p><a href="${source.url}" target="_blank" rel="noopener noreferrer">Conferir metodologia [${source.id}]</a></div></article>`;
+  }
+  if(indicator.type==='categorical'){
+    const totals=cities.reduce((acc,city)=>{acc[city[indicator.key]]=(acc[city[indicator.key]]||0)+1;return acc},{});
+    const ranked=Object.entries(totals).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
+    const max=Math.max(...ranked.map(([,value])=>value),1);
+    const bars=ranked.map(([party,value])=>`<div class="indicator-bar-row"><span class="indicator-city">${esc(party)}</span><span class="indicator-track" aria-hidden="true"><span style="width:${value/max*100}%"></span></span><strong>${value} ${value===1?'cidade':'cidades'}</strong></div>`).join('');
+    const citiesList=cities.map(city=>`<span><strong>${esc(city.city)}</strong> · ${esc(city[indicator.key])} ${territorySourceLink(indicator,city)}</span>`).join('');
+    return `<article class="card indicator-card">${heading}<div class="indicator-bars">${bars}</div><div class="category-city-list">${citiesList}</div></article>`;
+  }
+  const ranked=[...cities].sort((a,b)=>b[indicator.key]-a[indicator.key]);
+  const max=Math.max(...ranked.map(city=>city[indicator.key]),1);
+  const rows=ranked.map(city=>`<div class="indicator-bar-row"><span class="indicator-city">${esc(city.city)}</span><span class="indicator-track" aria-hidden="true"><span style="width:${Math.max(4,city[indicator.key]/max*100)}%"></span></span><strong>${territoryDisplayValue(indicator,city)} ${territorySourceLink(indicator,city)}</strong></div>`).join('');
+  const calculationNote=indicator.estimateKey?'<p class="indicator-note">* taxa calculada com total da SSP-SP e população estimada do IBGE.</p>':'';
+  return `<article class="card indicator-card">${heading}${indicator.lowerBetter?'<p class="indicator-note">Neste indicador, menor é melhor.</p>':''}${calculationNote}<div class="indicator-bars">${rows}</div></article>`;
+}
+function renderTerritory(){
+  const cities=territoryData.filter(city=>demographyScope==='all'||city.group===demographyScope);
+  document.querySelector('#demography-charts').innerHTML=demographyIndicators.map((indicator,index)=>renderTerritoryIndicator(indicator,index,cities)).join('');
+  document.querySelector('#political-charts').innerHTML=politicalIndicators.map((indicator,index)=>renderTerritoryIndicator(indicator,index+demographyIndicators.length,cities)).join('');
+  document.querySelector('#economy-charts').innerHTML=economyIndicators.map((indicator,index)=>renderTerritoryIndicator(indicator,index+demographyIndicators.length+politicalIndicators.length,cities)).join('');
+  const header=cities.map(city=>`<span role="columnheader">${esc(city.city)}</span>`).join('');
+  const rows=allTerritoryIndicators.map(indicator=>`<div class="demography-table-row" role="row"><strong role="rowheader">${esc(indicator.label)} <small>${indicator.year}</small></strong>${cities.map(city=>`<span role="cell" data-city="${esc(city.city)}">${territoryDisplayValue(indicator,city)} ${territorySourceLink(indicator,city)}</span>`).join('')}</div>`).join('');
+  document.querySelector('#demography-table').style.setProperty('--city-count',cities.length);
+  document.querySelector('#demography-table').innerHTML=`<div class="demography-table-head" role="row"><span role="columnheader">Indicador</span>${header}</div>${rows}`;
+  const citySources=territoryData.map(city=>`<li><a href="${city.url}" target="_blank" rel="noopener noreferrer"><strong>[${city.source}] IBGE · ${esc(city.city)}</strong><span>População e densidade (2022), estimativa e área (2025), escolarização (2022), IDHM (2010), mortalidade infantil e PIB por pessoa (2023). Consulta: 11/08/2026.</span></a></li>`).join('');
+  const sharedSources=territorySources.map(source=>`<li><a href="${source.url}" target="_blank" rel="noopener noreferrer"><strong>[${source.id}] ${esc(source.label)}</strong><span>${esc(source.detail)} Consulta: 11/08/2026.</span></a></li>`).join('');
+  document.querySelector('#demography-sources').innerHTML=citySources+sharedSources;
+}
 function renderUsers(){const remote=window.campaignBackend.isRemote(),users=remote?window.campaignBackend.users:window.campaignBackend.users;document.querySelector('#current-user-display').textContent=window.campaignBackend.displayName();document.querySelector('#user-list').innerHTML=users.map((u,i)=>`<span>${i+1}. ${esc(u.display_name)} <small>(${esc(u.role)})</small></span>`).join('');const canManage=window.campaignBackend.isAdmin();const form=document.querySelector('#users-form');form.querySelectorAll('input,select,button[type="submit"]').forEach(element=>element.disabled=!canManage);form.querySelector('.form-intro').textContent=canManage?'O administrador cadastra o e-mail primeiro. Depois, a pessoa usa “Ativar primeiro acesso” na tela de entrada e cria sua própria senha.':'Somente um administrador pode incluir, alterar ou remover acessos.';document.querySelector('#user-fields').innerHTML=`<div class="access-list" role="list">${users.map(u=>`<div class="access-row" role="listitem"><span><strong>${esc(u.display_name)}</strong><small>${esc(u.email)} · ${esc(u.role)}</small></span>${canManage&&u.email!==window.campaignBackend.email()?`<button class="text-button danger" type="button" data-remove-user="${esc(u.email)}">Remover</button>`:''}</div>`).join('')}</div>`}
 function renderAudit(){document.querySelector('#audit-table').innerHTML=state.audit.length?state.audit.map(a=>`<tr><td>${new Date(a.at).toLocaleString('pt-BR')}</td><td>${esc(a.actor)}</td><td>${esc(a.action)}</td><td>${esc(a.detail)}</td></tr>`).join(''):'<tr><td colspan="4">Nenhuma atividade registrada.</td></tr>'}
 function applyWriteAccess(){if(window.campaignBackend.canWrite())return;document.querySelectorAll('[data-task],[data-answer],#metric-form input,#metric-form select,#metric-form textarea,#metric-form button[type="submit"],#settings-form input,#settings-form button[type="submit"],#import-json,#clear-metrics,[data-delete-metric],#save-phase').forEach(element=>element.disabled=true)}
@@ -164,6 +262,8 @@ function strategicMapMarkdown(){return `# Mapa Estratégico da Campanha — Kiel
 document.addEventListener('click',async e=>{
   const help=e.target.closest('[data-help-button]');
   if(help){const box=help.parentElement.querySelector('.question-help'),open=!box.classList.contains('open');document.querySelectorAll('.question-help.open').forEach(item=>item.classList.remove('open'));document.querySelectorAll('[data-help-button][aria-expanded="true"]').forEach(item=>item.setAttribute('aria-expanded','false'));box.classList.toggle('open',open);help.setAttribute('aria-expanded',String(open));return}
+  const scope=e.target.closest('[data-demography-scope]');
+  if(scope){demographyScope=scope.dataset.demographyScope;document.querySelectorAll('[data-demography-scope]').forEach(button=>{const active=button===scope;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active))});renderTerritory();return}
   const phase=e.target.closest('[data-phase]');
   if(phase){activePhase=Number(phase.dataset.phase);renderNav();renderPhase();applyWriteAccess();window.scrollTo({top:document.querySelector('.journey-layout').offsetTop-80,behavior:'smooth'})}
   const nav=e.target.closest('[data-view]');
