@@ -2,6 +2,7 @@ class CampaignBackend {
   constructor(config) {
     this.url = config?.url || '';
     this.key = config?.publishableKey || '';
+    this.siteUrl = config?.siteUrl || `${location.origin}${location.pathname}`;
     this.storageKey = 'kiel-campaign-session';
     this.preview = location.protocol === 'file:' || ['localhost', '127.0.0.1'].includes(location.hostname);
     this.session = null;
@@ -14,6 +15,11 @@ class CampaignBackend {
   canWrite() { return this.preview || ['admin', 'operador'].includes(this.profile?.role); }
   displayName() { return this.profile?.display_name || this.session?.user?.email || 'Prévia local'; }
   email() { return this.profile?.email || this.session?.user?.email || ''; }
+
+  authRedirectPath(path) {
+    const separator = path.includes('?') ? '&' : '?';
+    return `${path}${separator}redirect_to=${encodeURIComponent(this.siteUrl)}`;
+  }
 
   showApp() {
     document.querySelector('#login-screen').hidden = true;
@@ -94,7 +100,7 @@ class CampaignBackend {
   }
 
   async signUp(email, password) {
-    const data = await this.request('/auth/v1/signup', {
+    const data = await this.request(this.authRedirectPath('/auth/v1/signup'), {
       method: 'POST',
       body: JSON.stringify({ email, password, data: { application: 'campanha-kiel-2026' } })
     });
@@ -107,7 +113,7 @@ class CampaignBackend {
   }
 
   async recover(email) {
-    await this.request('/auth/v1/recover', { method: 'POST', body: JSON.stringify({ email }) });
+    await this.request(this.authRedirectPath('/auth/v1/recover'), { method: 'POST', body: JSON.stringify({ email }) });
   }
 
   async consumeAuthCallback() {
