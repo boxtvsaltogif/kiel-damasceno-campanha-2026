@@ -110,6 +110,66 @@ class CampaignBackend {
     await this.request('/auth/v1/recover', { method: 'POST', body: JSON.stringify({ email }) });
   }
 
+  async consumeAuthCallback() {
+    const params = new URLSearchParams(location.hash.replace(/^#/, ''));
+    const accessToken = params.get('access_token');
+    const refreshToken = params.get('refresh_token');
+    if (!accessToken || !refreshToken) return null;
+
+    this.saveSession({
+      access_token: accessToken,
+      refresh_token: refreshToken,
+      expires_in: Number(params.get('expires_in') || 3600),
+      token_type: params.get('token_type') || 'bearer'
+    });
+    const user = await this.request('/auth/v1/user', {}, true);
+    this.session.user = user;
+    this.saveSession(this.session);
+    history.replaceState(null, '', `${location.pathname}${location.search}`);
+    return params.get('type') || 'confirmation';
+  }
+
+  preparePasswordReset(form, signup, recover, resolve) {
+    document.querySelector('#login-title').textContent = 'Criar nova senha';
+    document.querySelector('#login-email').closest('label').hidden = true;
+    const password = document.querySelector('#login-password');
+    password.value = '';
+    password.autocomplete = 'new-password';
+    password.closest('label').firstChild.textContent = 'Nova senha';
+    form.querySelector('button[type="submit"]').hidden = true;
+    signup.hidden = true;
+    recover.hidden = true;
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'primary';
+    button.textContent = 'Salvar nova senha';
+    form.append(button);
+    this.message('Digite uma nova senha com pelo menos 8 caracteres.');
+
+    button.addEventListener('click', async () => {
+      if (password.value.length < 8) {
+        this.message('A nova senha precisa ter pelo menos 8 caracteres.', 'error');
+        return;
+      }
+      button.disabled = true;
+      this.message('Salvando sua nova senha...');
+      try {
+        const user = await this.request('/auth/v1/user', {
+          method: 'PUT', body: JSON.stringify({ password: password.value })
+        }, true);
+        this.session.user = user;
+        this.saveSession(this.session);
+        await this.verifyAccess();
+        this.showApp();
+        resolve(this.profile);
+      } catch (error) {
+        button.disabled = false;
+        this.message(error.message, 'error');
+      }
+    });
+  }
+
   async initialize() {
     if (this.preview) {
       this.profile = { email: 'preview@local', display_name: 'Prévia local', role: 'admin', active: true };
@@ -126,7 +186,18 @@ class CampaignBackend {
     const signup = document.querySelector('#signup-button');
     const recover = document.querySelector('#recover-button');
 
+    let callbackType = null;
+    try { callbackType = await this.consumeAuthCallback(); }
+    catch (error) {
+      localStorage.removeItem(this.storageKey);
+      this.session = null;
+      history.replaceState(null, '', `${location.pathname}${location.search}`);
+      this.message(`O link de acesso não pôde ser confirmado: ${error.message}`, 'error');
+    }
+
+    let finishLogin;
     const waitForLogin = new Promise(resolve => {
+      finishLogin = resolve;
       form.addEventListener('submit', async event => {
         event.preventDefault();
         const email = form.email.value.trim().toLowerCase();
@@ -162,6 +233,12 @@ class CampaignBackend {
         } catch (error) { this.message(error.message, 'error'); }
       });
     });
+
+    if (callbackType === 'recovery') {
+      this.preparePasswordReset(form, signup, recover, finishLogin);
+      document.querySelector('#login-screen').hidden = false;
+      return waitForLogin;
+    }
 
     this.loadStoredSession();
     if (this.session) {
