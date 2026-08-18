@@ -248,10 +248,172 @@ function renderTerritory(){
   const sharedSources=territorySources.map(source=>`<li><a href="${source.url}" target="_blank" rel="noopener noreferrer"><strong>[${source.id}] ${esc(source.label)}</strong><span>${esc(source.detail)} Consulta: 11/08/2026.</span></a></li>`).join('');
   document.querySelector('#demography-sources').innerHTML=citySources+sharedSources;
 }
+let monitorDate='all';
+let monitorDataCache=null;
+const monitorNetworkNames={instagram:'Instagram',facebook:'Facebook',threads:'Threads',tiktok:'TikTok',youtube:'YouTube',x:'X'};
+function monitoringData(){
+  if(monitorDataCache)return monitorDataCache;
+  const node=document.querySelector('#monitoramento-dados');
+  if(!node)return null;
+  try{monitorDataCache=JSON.parse(node.textContent);return monitorDataCache}catch(error){console.error('Dados de monitoramento inválidos.',error);return null}
+}
+function monitorNumber(value){return Number.isFinite(value)?Number(value).toLocaleString('pt-BR'):'Não verificável'}
+function selectedMonitorRecords(data){return monitorDate==='all'?data.historico:data.historico.filter(item=>item.data===monitorDate)}
+function aggregateNetwork(records,key){
+  const pieces=records.map(item=>item.redes?.[key]).filter(Boolean);
+  const sum=metric=>{const values=pieces.map(item=>item[metric]).filter(Number.isFinite);return values.length?values.reduce((total,value)=>total+value,0):null};
+  const reviewedPieces=pieces.filter(item=>Number(item.comentarios_revisados)>0);
+  const sentiment=metric=>reviewedPieces.length?reviewedPieces.reduce((total,item)=>total+Number(item[metric]||0),0):null;
+  return {
+    publicacoes:sum('publicacoes'),curtidas:sum('curtidas'),comentarios_exibidos:sum('comentarios_exibidos'),
+    comentarios_revisados:sum('comentarios_revisados'),favoraveis:sentiment('favoraveis'),neutros:sentiment('neutros'),
+    desfavoraveis:sentiment('desfavoraveis'),nao_classificados:sum('nao_classificados'),repostagens:sum('repostagens'),
+    curtidas_comentarios:sum('curtidas_comentarios'),visualizacoes:sum('visualizacoes')
+  };
+}
+function renderMonitorFilters(data){
+  const target=document.querySelector('#monitor-date-filter');
+  if(!target)return;
+  const buttons=[{data:'all',rotulo:'Todos'},...data.historico.map(item=>({data:item.data,rotulo:item.rotulo}))];
+  target.innerHTML=buttons.map(item=>`<button type="button" class="scope-button ${monitorDate===item.data?'active':''}" data-monitor-date="${item.data}" aria-pressed="${monitorDate===item.data}">${esc(item.rotulo)}</button>`).join('');
+}
+function renderMonitorLineChart(data){
+  const target=document.querySelector('#monitor-line-chart');
+  if(!target)return;
+  const compact=window.matchMedia('(max-width: 620px)').matches;
+  const width=compact?600:1000,height=compact?360:420,left=compact?62:78,right=compact?24:38,top=compact?38:42,bottom=compact?66:72,baseline=compact?195:225;
+  const chartHistory=compact?[{
+    data:'periodo-nao-verificavel',rotulo:'12–14/08',status:'nao_verificavel',sentimento:{favoraveis:null,desfavoraveis:null},grouped:true
+  },...data.historico.filter(item=>Number.isFinite(item.sentimento?.favoraveis)&&Number.isFinite(item.sentimento?.desfavoraveis))]:data.historico;
+  const maxValue=Math.max(1,...data.historico.flatMap(item=>[item.sentimento?.favoraveis,item.sentimento?.desfavoraveis]).filter(Number.isFinite));
+  const xAt=index=>left+(width-left-right)*(chartHistory.length===1?.5:index/(chartHistory.length-1));
+  const positiveY=value=>baseline-(Number(value)/maxValue)*(baseline-top-20);
+  const negativeY=value=>baseline+(Number(value)/maxValue)*(height-bottom-baseline-20);
+  const verified=chartHistory.map((item,index)=>({item,index,x:xAt(index)})).filter(point=>Number.isFinite(point.item.sentimento?.favoraveis)&&Number.isFinite(point.item.sentimento?.desfavoraveis));
+  const pathFor=(points,y)=>points.map((point,index)=>`${index?'L':'M'} ${point.x.toFixed(1)} ${y(point.item).toFixed(1)}`).join(' ');
+  const positivePath=pathFor(verified,item=>positiveY(item.sentimento.favoraveis));
+  const negativePath=pathFor(verified,item=>negativeY(item.sentimento.desfavoraveis));
+  const tickValues=[maxValue,Math.ceil(maxValue/2),0,-Math.ceil(maxValue/2),-maxValue];
+  const tickY=value=>value>0?positiveY(value):value<0?negativeY(Math.abs(value)):baseline;
+  const grid=tickValues.map(value=>`<g><line x1="${left}" x2="${width-right}" y1="${tickY(value)}" y2="${tickY(value)}" class="monitor-grid-line ${value===0?'zero':''}"/><text x="${left-16}" y="${tickY(value)+5}" text-anchor="end" class="monitor-axis-label">${value>0?'+':''}${value}</text></g>`).join('');
+  const points=chartHistory.map((item,index)=>{
+    const x=xAt(index),available=Number.isFinite(item.sentimento?.favoraveis)&&Number.isFinite(item.sentimento?.desfavoraveis),selected=monitorDate==='all'||monitorDate===item.data;
+    if(!available)return `<g ${item.grouped?'':`data-monitor-date="${item.data}" role="button" tabindex="0"`} aria-label="${esc(item.rotulo)}: comentários não verificáveis" class="monitor-svg-point selected"><circle cx="${x}" cy="${baseline}" r="9" class="unavailable"/><text x="${x}" y="${baseline-17}" text-anchor="middle" class="monitor-nv-label">NV</text><text x="${x}" y="${height-35}" text-anchor="middle" class="monitor-date-label">${esc(item.rotulo)}</text></g>`;
+    const py=positiveY(item.sentimento.favoraveis),ny=negativeY(item.sentimento.desfavoraveis);
+    return `<g data-monitor-date="${item.data}" role="button" tabindex="0" aria-label="${esc(item.rotulo)}: ${item.sentimento.favoraveis} favoráveis e ${item.sentimento.desfavoraveis} desfavoráveis" class="monitor-svg-point ${selected?'selected':''}"><circle cx="${x}" cy="${py}" r="8" class="positive"/><text x="${x}" y="${py-15}" text-anchor="middle" class="monitor-point-value positive">+${item.sentimento.favoraveis}</text><circle cx="${x}" cy="${ny}" r="7" class="negative"/><text x="${x}" y="${ny+24}" text-anchor="middle" class="monitor-point-value negative">${item.sentimento.desfavoraveis?'-'+item.sentimento.desfavoraveis:'0'}</text><text x="${x}" y="${height-35}" text-anchor="middle" class="monitor-date-label">${esc(item.rotulo)}</text></g>`;
+  }).join('');
+  target.innerHTML=`<svg viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="monitor-chart-title monitor-chart-desc" preserveAspectRatio="xMidYMid meet"><title id="monitor-chart-title">Comentários favoráveis e desfavoráveis por data</title><desc id="monitor-chart-desc">Valores azuis aparecem acima da linha zero e valores vermelhos aparecem abaixo. Dias sem comentários acessíveis são marcados como NV.</desc>${grid}<text x="${left}" y="22" class="monitor-axis-title">comentários classificados</text>${positivePath?`<path d="${positivePath}" class="monitor-line positive"/>`:''}${negativePath?`<path d="${negativePath}" class="monitor-line negative"/>`:''}${points}</svg>`;
+}
+function monitorDetailStats(records){
+  const instagram=aggregateNetwork(records,'instagram');
+  return {
+    curtidas:instagram.curtidas,
+    comentarios_exibidos:instagram.comentarios_exibidos,
+    comentarios_revisados:instagram.comentarios_revisados,
+    favoraveis:instagram.favoraveis,
+    neutros:instagram.neutros,
+    desfavoraveis:instagram.desfavoraveis,
+    repostagens:instagram.repostagens,
+    curtidas_comentarios:instagram.curtidas_comentarios
+  };
+}
+function renderMonitorDayDetail(data){
+  const target=document.querySelector('#monitor-day-detail');
+  if(!target)return;
+  const records=selectedMonitorRecords(data),stats=monitorDetailStats(records),single=records.length===1?records[0]:null;
+  const facebook=aggregateNetwork(records,'facebook');
+  const comments=records.flatMap(item=>(item.comentarios||[]).map(comment=>({...comment,data:item.rotulo})));
+  const sources=[...new Map(records.flatMap(item=>item.fontes||[]).map(source=>[source.url,source])).values()];
+  const title=single?`${single.rotulo} · ${single.titulo}`:'Todos os dias registrados';
+  const summary=single?single.resumo:`O histórico reúne ${data.historico.length} datas. Há 11 comentários classificados: 8 em 16/08 e 3 em 17/08. Os dias anteriores permanecem marcados como não verificáveis.`;
+  const statusText=single?(single.status==='nao_verificavel'?'Não verificável':'Dados confirmados'):'Cobertura parcial';
+  const statItems=[['Curtidas nas publicações',stats.curtidas],['Comentários exibidos',stats.comentarios_exibidos],['Comentários revisados',stats.comentarios_revisados],['Favoráveis',stats.favoraveis],['Neutros ou mistos',stats.neutros],['Desfavoráveis',stats.desfavoraveis],['Repostagens',stats.repostagens],['Curtidas nos comentários',stats.curtidas_comentarios]];
+  const commentHtml=comments.length?`<details class="monitor-comment-details" ${single?'open':''}><summary>Ver ${comments.length} comentário${comments.length===1?'':'s'} analisado${comments.length===1?'':'s'}</summary><ol>${comments.map(comment=>`<li><blockquote>“${esc(comment.texto)}”</blockquote><span>${esc(comment.data)} · ${esc(comment.valencia)} · Curtidas: ${Number.isFinite(comment.curtidas)?comment.curtidas:'não exibidas'}</span></li>`).join('')}</ol></details>`:'<p class="monitor-no-comments">Nenhum comentário pôde ser classificado nesta data. Isso não deve ser interpretado como zero repercussão.</p>';
+  const sourceHtml=sources.length?`<div class="monitor-detail-links">${sources.map(source=>`<a href="${esc(source.url)}" target="_blank" rel="noopener noreferrer">${esc(source.label)}</a>`).join('')}</div>`:'';
+  const facebookNote=Number.isFinite(facebook.comentarios_exibidos)&&facebook.comentarios_exibidos>0?` A interface também indicava ${facebook.comentarios_exibidos} comentário${facebook.comentarios_exibidos===1?'':'s'} integrado${facebook.comentarios_exibidos===1?'':'s'} do Facebook; ${facebook.comentarios_exibidos===1?'ele não foi somado':'eles não foram somados'} novamente ao total para evitar possível duplicidade.`:'';
+  target.innerHTML=`<div class="monitor-detail-heading"><div><p class="eyebrow">Detalhe selecionado</p><h2>${esc(title)}</h2></div><span class="monitor-status ${single?.status==='verificado'?'':'unavailable'}">${esc(statusText)}</span></div><p>${esc(summary)}</p><div class="monitor-detail-stats">${statItems.map(([label,value])=>`<div><span>${esc(label)}</span><strong>${monitorNumber(value)}</strong></div>`).join('')}</div><p class="source-note">“Comentários exibidos” é o total mostrado pelo Instagram. “Comentários revisados” é somente o que foi efetivamente aberto e classificado.${facebookNote}</p>${commentHtml}${sourceHtml}`;
+}
+function verifiedDailyInteractions(record){
+  if(record.status!=='verificado'||record.tipo!=='publicação oficial')return null;
+  const source=record.redes?.instagram;
+  const metrics=[source?.curtidas,source?.comentarios_exibidos,source?.repostagens];
+  return metrics.every(Number.isFinite)?metrics.reduce((total,value)=>total+value,0):null;
+}
+function verifiedDailyViews(record){
+  return record.status==='verificado'&&record.tipo==='publicação oficial'&&Number.isFinite(record.visualizacoes_verificadas)?record.visualizacoes_verificadas:null;
+}
+function monitorMetricSeries(data,metric){
+  let cumulative=0,hasCumulative=false;
+  return data.historico.map(record=>{
+    const daily=metric(record);
+    if(Number.isFinite(daily)){cumulative+=daily;hasCumulative=true}
+    return {data:record.data,rotulo:record.rotulo,daily,cumulative:Number.isFinite(daily)&&hasCumulative?cumulative:null};
+  });
+}
+function renderMonitorPairChart(targetId,series,label){
+  const target=document.querySelector(targetId);
+  if(!target)return;
+  const visible=monitorDate==='all'?series:series.filter(item=>item.data===monitorDate);
+  const values=visible.flatMap(item=>[item.daily,item.cumulative]).filter(Number.isFinite);
+  const maxValue=Math.max(1,...values);
+  const bar=(value,className,title)=>{
+    const available=Number.isFinite(value),height=available?Math.max(value===0?2:(value/maxValue*100),4):8;
+    return `<span class="monitor-pair-bar ${className} ${available?'':'unavailable'}" style="--bar-height:${height.toFixed(2)}%" title="${esc(title)}: ${available?value.toLocaleString('pt-BR'):'não verificável'}"><b>${available?value.toLocaleString('pt-BR'):'NV'}</b></span>`;
+  };
+  target.innerHTML=visible.map(item=>`<div class="monitor-pair-column" role="img" aria-label="${esc(item.rotulo)}: ${esc(label)} no dia ${Number.isFinite(item.daily)?item.daily.toLocaleString('pt-BR'):'não verificável'}; acumulado ${Number.isFinite(item.cumulative)?item.cumulative.toLocaleString('pt-BR'):'não verificável'}"><div class="monitor-pair-bars">${bar(item.daily,'daily','No dia')}${bar(item.cumulative,'cumulative','Acumulado')}</div><strong>${esc(item.rotulo)}</strong></div>`).join('');
+}
+function renderMonitorVerticalMetrics(data){
+  const interactions=monitorMetricSeries(data,verifiedDailyInteractions);
+  const views=monitorMetricSeries(data,verifiedDailyViews);
+  renderMonitorPairChart('#monitor-interactions-bars',interactions,'interações verificadas');
+  renderMonitorPairChart('#monitor-views-bars',views,'visualizações verificadas');
+  const selectedInteractions=monitorDate==='all'?interactions.at(-1):interactions.find(item=>item.data===monitorDate);
+  const selectedViews=monitorDate==='all'?views.at(-1):views.find(item=>item.data===monitorDate);
+  const interactionsTotal=document.querySelector('#monitor-interactions-total');
+  const viewsTotal=document.querySelector('#monitor-views-total');
+  if(interactionsTotal)interactionsTotal.textContent=Number.isFinite(selectedInteractions?.cumulative)?`${selectedInteractions.cumulative.toLocaleString('pt-BR')} acumuladas`:'Não verificável';
+  if(viewsTotal)viewsTotal.textContent=Number.isFinite(selectedViews?.cumulative)?`${selectedViews.cumulative.toLocaleString('pt-BR')} acumuladas`:'Não verificável';
+}
+function monitorNetworkIcon(key){
+  const icons={
+    instagram:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle class="fill" cx="17.5" cy="6.5" r="1.2"/></svg>',
+    facebook:'<svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M14.2 21v-8h2.7l.4-3.1h-3.1V8c0-.9.3-1.5 1.6-1.5h1.7V3.7c-.3 0-1.3-.1-2.5-.1-2.5 0-4.2 1.5-4.2 4.3v2H8v3.1h2.8v8h3.4z"/></svg>',
+    threads:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c5.7 0 8.6 3.4 8.6 9 0 5.8-3 9-8.2 9-4.7 0-8-2.9-8-7.1 0-3.7 2.5-6.2 6-6.2 3.8 0 6.1 2.3 6.1 5.3 0 2.7-1.8 4.6-4.3 4.6-2 0-3.4-1.1-3.4-2.7 0-1.8 1.5-2.9 3.8-2.9 3.6 0 6.2 1.5 7.7 4.2"/></svg>',
+    tiktok:'<svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M14.2 3h3c.2 1.8 1.2 3 3 3.4v3c-1.2 0-2.3-.3-3.1-.9v6.7a5.8 5.8 0 1 1-5.8-5.8h.9v3.1a2.7 2.7 0 1 0 1.9 2.6V3z"/></svg>',
+    youtube:'<svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M22 12c0-2.2-.3-4.4-.7-5.1-.4-.8-1.1-1.4-2-1.6C17.7 5 14.7 5 12 5s-5.7 0-7.3.3c-.9.2-1.6.8-2 1.6C2.3 7.6 2 9.8 2 12s.3 4.4.7 5.1c.4.8 1.1 1.4 2 1.6 1.6.3 4.6.3 7.3.3s5.7 0 7.3-.3c.9-.2 1.6-.8 2-1.6.4-.7.7-2.9.7-5.1z"/><path class="play" d="m10 9 5 3-5 3z"/></svg>',
+    x:'<svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M4 3h4.8l4.1 5.5L17.5 3H20l-5.9 7.3L20.7 21h-4.8l-4.5-6-5 6H4l6.2-7.8L4 3zm3.4 2 9.8 14h1.1L8.5 5H7.4z"/></svg>'
+  };
+  return icons[key]||'';
+}
+function renderMonitorNetworkChart(data){
+  const target=document.querySelector('#monitor-network-chart');
+  if(!target)return;
+  const records=selectedMonitorRecords(data);
+  const rows=Object.keys(monitorNetworkNames).map(key=>({key,name:monitorNetworkNames[key],data:aggregateNetwork(records,key)}));
+  const categories=[['curtidas','likes','Curtidas'],['favoraveis','positive','Favoráveis'],['neutros','neutral','Neutros'],['desfavoraveis','negative','Desfavoráveis'],['nao_classificados','unclassified','Não classificados'],['repostagens','reposts','Repostagens']];
+  const totals=rows.map(row=>categories.reduce((total,[key])=>total+(Number.isFinite(row.data[key])?row.data[key]:0),0));
+  const maxTotal=Math.max(1,...totals);
+  target.innerHTML=rows.map((row,index)=>{
+    const total=totals[index],hasAny=categories.some(([key])=>Number.isFinite(row.data[key])&&row.data[key]>0);
+    const segments=categories.map(([key,className,label])=>Number.isFinite(row.data[key])&&row.data[key]>0?`<span class="${className}" style="width:${(row.data[key]/maxTotal*100).toFixed(3)}%" title="${label}: ${row.data[key]}"></span>`:'').join('');
+    const metrics=categories.map(([key,,label])=>`<span><b>${esc(label)}:</b> ${monitorNumber(row.data[key])}</span>`).join('');
+    const extras=`Publicações monitoradas: ${monitorNumber(row.data.publicacoes)} · Comentários exibidos: ${monitorNumber(row.data.comentarios_exibidos)} · Revisados: ${monitorNumber(row.data.comentarios_revisados)}`;
+    return `<section class="monitor-network-row" aria-label="${esc(row.name)}"><span class="monitor-network-icon ${row.key}" aria-hidden="true">${monitorNetworkIcon(row.key)}</span><div class="monitor-network-body"><div class="monitor-network-heading"><h3>${esc(row.name)}</h3><strong>${hasAny?total.toLocaleString('pt-BR')+' interações contáveis':'Aguardando métrica verificável'}</strong></div><div class="monitor-network-track" role="img" aria-label="${esc(row.name)}: ${esc(extras)}">${segments||'<span class="empty">Sem número comparável</span>'}</div><div class="monitor-network-metrics">${metrics}</div><p class="source-note">${esc(extras)}${Number.isFinite(row.data.curtidas_comentarios)?` · Curtidas nos comentários: ${row.data.curtidas_comentarios}`:''}</p></div></section>`;
+  }).join('');
+}
+function renderMonitoring(){
+  const data=monitoringData();
+  if(!data||!Array.isArray(data.historico))return;
+  renderMonitorFilters(data);
+  renderMonitorLineChart(data);
+  renderMonitorDayDetail(data);
+  renderMonitorVerticalMetrics(data);
+  renderMonitorNetworkChart(data);
+}
 function renderUsers(){const remote=window.campaignBackend.isRemote(),users=remote?window.campaignBackend.users:window.campaignBackend.users;document.querySelector('#current-user-display').textContent=window.campaignBackend.displayName();document.querySelector('#user-list').innerHTML=users.map((u,i)=>`<span>${i+1}. ${esc(u.display_name)} <small>(${esc(u.role)})</small></span>`).join('');const canManage=window.campaignBackend.isAdmin();const form=document.querySelector('#users-form');form.querySelectorAll('input,select,button[type="submit"]').forEach(element=>element.disabled=!canManage);form.querySelector('.form-intro').textContent=canManage?'O administrador cadastra o e-mail primeiro. Depois, a pessoa usa “Ativar primeiro acesso” na tela de entrada e cria sua própria senha.':'Somente um administrador pode incluir, alterar ou remover acessos.';document.querySelector('#user-fields').innerHTML=`<div class="access-list" role="list">${users.map(u=>`<div class="access-row" role="listitem"><span><strong>${esc(u.display_name)}</strong><small>${esc(u.email)} · ${esc(u.role)}</small></span>${canManage&&u.email!==window.campaignBackend.email()?`<button class="text-button danger" type="button" data-remove-user="${esc(u.email)}">Remover</button>`:''}</div>`).join('')}</div>`}
 function renderAudit(){document.querySelector('#audit-table').innerHTML=state.audit.length?state.audit.map(a=>`<tr><td>${new Date(a.at).toLocaleString('pt-BR')}</td><td>${esc(a.actor)}</td><td>${esc(a.action)}</td><td>${esc(a.detail)}</td></tr>`).join(''):'<tr><td colspan="4">Nenhuma atividade registrada.</td></tr>'}
 function applyWriteAccess(){if(window.campaignBackend.canWrite())return;document.querySelectorAll('[data-task],[data-answer],#metric-form input,#metric-form select,#metric-form textarea,#metric-form button[type="submit"],#settings-form input,#settings-form button[type="submit"],#import-json,#clear-metrics,[data-delete-metric],#save-phase').forEach(element=>element.disabled=true)}
-function renderAll(){renderNav();renderPhase();updateProgress();renderMetrics();renderTerritory();renderUsers();renderAudit();applyWriteAccess()}
+function renderAll(){renderNav();renderPhase();updateProgress();renderMetrics();renderTerritory();renderMonitoring();renderUsers();renderAudit();applyWriteAccess()}
 function applySettings(){document.documentElement.style.setProperty('--primary',state.settings.primaryColor||'#1800ac');document.documentElement.style.setProperty('--accent',state.settings.accentColor||'#00d100');document.querySelector('#brand-name').textContent=state.settings.candidateName;const f=document.querySelector('#settings-form');Object.entries(state.settings).forEach(([k,v])=>{if(f.elements[k])f.elements[k].value=v})}
 function toast(msg){const el=document.querySelector('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.classList.remove('show'),2600)}
 function download(name,text,type='text/plain'){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
@@ -260,6 +422,8 @@ function phaseMarkdown(){const p=phases[activePhase];return `# Módulo ${activeP
 function strategicMapMarkdown(){return `# Mapa Estratégico da Campanha — Kiel Damasceno 2026\n\n> Documento operacional. Não é pesquisa eleitoral nem previsão de votos.\n\n${[1,2,3].map(i=>`## ${phases[i].title}\n\n**Objetivo:** ${phases[i].objective}\n\n${phases[i].questions.map((q,j)=>`### ${q}\n${state.answers[`${i}-${j}`]||'Resposta pendente.'}`).join('\n\n')}\n\n**Resultado esperado:** ${phases[i].ideal}`).join('\n\n---\n\n')}\n\n## Aprovação na reunião de feedback\n\n- Data: ____/____/2026\n- Decisão: ( ) aprovado  ( ) corrigir  ( ) refazer\n- Responsável: ____________________\n- Próxima revisão: ____/____/2026\n`}
 
 document.addEventListener('click',async e=>{
+  const monitorFilter=e.target.closest('[data-monitor-date]');
+  if(monitorFilter){monitorDate=monitorFilter.dataset.monitorDate;renderMonitoring();return}
   const help=e.target.closest('[data-help-button]');
   if(help){const box=help.parentElement.querySelector('.question-help'),open=!box.classList.contains('open');document.querySelectorAll('.question-help.open').forEach(item=>item.classList.remove('open'));document.querySelectorAll('[data-help-button][aria-expanded="true"]').forEach(item=>item.setAttribute('aria-expanded','false'));box.classList.toggle('open',open);help.setAttribute('aria-expanded',String(open));return}
   const scope=e.target.closest('[data-demography-scope]');
@@ -279,6 +443,8 @@ document.addEventListener('click',async e=>{
   if(e.target.id==='clear-metrics'&&state.metrics.length&&confirm('Excluir todos os registros de alcance do banco compartilhado?')){if(!window.campaignBackend.canWrite()){toast('Seu acesso permite somente leitura.');return}log('Limpou painel',`${state.metrics.length} registros excluídos`);state.metrics=[];await save('Registros removidos.');renderMetrics()}
   if(e.target.id==='logout-button')await window.campaignBackend.logout();
 });
+
+document.addEventListener('keydown',e=>{const point=e.target.closest?.('.monitor-svg-point[data-monitor-date]');if(point&&(e.key==='Enter'||e.key===' ')){e.preventDefault();monitorDate=point.dataset.monitorDate;renderMonitoring()}});
 
 document.addEventListener('change',async e=>{if(e.target.matches('[data-task]')){if(!window.campaignBackend.canWrite()){e.target.checked=!e.target.checked;toast('Seu acesso permite somente leitura.');return}state.tasks[e.target.dataset.task]=e.target.checked;log(e.target.checked?'Concluiu tarefa':'Reabriu tarefa',phases[activePhase].title);await save();renderNav();renderPhase();updateProgress()}});
 document.addEventListener('input',e=>{if(e.target.matches('[data-answer]')&&window.campaignBackend.canWrite())state.answers[e.target.dataset.answer]=e.target.value});
