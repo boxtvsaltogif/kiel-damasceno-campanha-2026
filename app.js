@@ -281,10 +281,8 @@ function renderMonitorLineChart(data){
   const target=document.querySelector('#monitor-line-chart');
   if(!target)return;
   const compact=window.matchMedia('(max-width: 620px)').matches;
-  const width=compact?600:1000,height=compact?360:420,left=compact?62:78,right=compact?24:38,top=compact?38:42,bottom=compact?66:72,baseline=compact?195:225;
-  const chartHistory=compact?[{
-    data:'periodo-nao-verificavel',rotulo:'12–14/08',status:'nao_verificavel',sentimento:{favoraveis:null,desfavoraveis:null},grouped:true
-  },...data.historico.filter(item=>Number.isFinite(item.sentimento?.favoraveis)&&Number.isFinite(item.sentimento?.desfavoraveis))]:data.historico;
+  const width=Math.max(compact?920:1000,data.historico.length*84),height=compact?360:420,left=compact?62:78,right=compact?24:38,top=compact?38:42,bottom=compact?66:72,baseline=compact?195:225;
+  const chartHistory=data.historico;
   const maxValue=Math.max(1,...data.historico.flatMap(item=>[item.sentimento?.favoraveis,item.sentimento?.desfavoraveis]).filter(Number.isFinite));
   const xAt=index=>left+(width-left-right)*(chartHistory.length===1?.5:index/(chartHistory.length-1));
   const positiveY=value=>baseline-(Number(value)/maxValue)*(baseline-top-20);
@@ -298,56 +296,54 @@ function renderMonitorLineChart(data){
   const grid=tickValues.map(value=>`<g><line x1="${left}" x2="${width-right}" y1="${tickY(value)}" y2="${tickY(value)}" class="monitor-grid-line ${value===0?'zero':''}"/><text x="${left-16}" y="${tickY(value)+5}" text-anchor="end" class="monitor-axis-label">${value>0?'+':''}${value}</text></g>`).join('');
   const points=chartHistory.map((item,index)=>{
     const x=xAt(index),available=Number.isFinite(item.sentimento?.favoraveis)&&Number.isFinite(item.sentimento?.desfavoraveis),selected=monitorDate==='all'||monitorDate===item.data;
-    if(!available)return `<g ${item.grouped?'':`data-monitor-date="${item.data}" role="button" tabindex="0"`} aria-label="${esc(item.rotulo)}: comentários não verificáveis" class="monitor-svg-point selected"><circle cx="${x}" cy="${baseline}" r="9" class="unavailable"/><text x="${x}" y="${baseline-17}" text-anchor="middle" class="monitor-nv-label">NV</text><text x="${x}" y="${height-35}" text-anchor="middle" class="monitor-date-label">${esc(item.rotulo)}</text></g>`;
+    if(!available)return `<g data-monitor-date="${item.data}" role="button" tabindex="0" aria-label="${esc(item.rotulo)}: sem comentário classificável localizado" class="monitor-svg-point selected"><circle cx="${x}" cy="${baseline}" r="9" class="unavailable"/><text x="${x}" y="${baseline-17}" text-anchor="middle" class="monitor-nv-label">NV</text><text x="${x}" y="${height-35}" text-anchor="middle" class="monitor-date-label">${esc(item.rotulo)}</text></g>`;
     const py=positiveY(item.sentimento.favoraveis),ny=negativeY(item.sentimento.desfavoraveis);
     return `<g data-monitor-date="${item.data}" role="button" tabindex="0" aria-label="${esc(item.rotulo)}: ${item.sentimento.favoraveis} favoráveis e ${item.sentimento.desfavoraveis} desfavoráveis" class="monitor-svg-point ${selected?'selected':''}"><circle cx="${x}" cy="${py}" r="8" class="positive"/><text x="${x}" y="${py-15}" text-anchor="middle" class="monitor-point-value positive">+${item.sentimento.favoraveis}</text><circle cx="${x}" cy="${ny}" r="7" class="negative"/><text x="${x}" y="${ny+24}" text-anchor="middle" class="monitor-point-value negative">${item.sentimento.desfavoraveis?'-'+item.sentimento.desfavoraveis:'0'}</text><text x="${x}" y="${height-35}" text-anchor="middle" class="monitor-date-label">${esc(item.rotulo)}</text></g>`;
   }).join('');
   target.innerHTML=`<svg viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="monitor-chart-title monitor-chart-desc" preserveAspectRatio="xMidYMid meet"><title id="monitor-chart-title">Comentários favoráveis e desfavoráveis por data</title><desc id="monitor-chart-desc">Valores azuis aparecem acima da linha zero e valores vermelhos aparecem abaixo. Dias sem comentários acessíveis são marcados como NV.</desc>${grid}<text x="${left}" y="22" class="monitor-axis-title">comentários classificados</text>${positivePath?`<path d="${positivePath}" class="monitor-line positive"/>`:''}${negativePath?`<path d="${negativePath}" class="monitor-line negative"/>`:''}${points}</svg>`;
 }
 function monitorDetailStats(records){
-  const instagram=aggregateNetwork(records,'instagram');
+  const networks=Object.keys(monitorNetworkNames).map(key=>aggregateNetwork(records,key));
+  const sum=metric=>{const values=networks.map(item=>item[metric]).filter(Number.isFinite);return values.length?values.reduce((total,value)=>total+value,0):null};
   return {
-    curtidas:instagram.curtidas,
-    comentarios_exibidos:instagram.comentarios_exibidos,
-    comentarios_revisados:instagram.comentarios_revisados,
-    favoraveis:instagram.favoraveis,
-    neutros:instagram.neutros,
-    desfavoraveis:instagram.desfavoraveis,
-    repostagens:instagram.repostagens,
-    curtidas_comentarios:instagram.curtidas_comentarios
+    curtidas:sum('curtidas'),
+    comentarios_exibidos:sum('comentarios_exibidos'),
+    comentarios_revisados:sum('comentarios_revisados'),
+    favoraveis:sum('favoraveis'),
+    neutros:sum('neutros'),
+    desfavoraveis:sum('desfavoraveis'),
+    repostagens:sum('repostagens'),
+    visualizacoes:sum('visualizacoes')
   };
 }
 function renderMonitorDayDetail(data){
   const target=document.querySelector('#monitor-day-detail');
   if(!target)return;
   const records=selectedMonitorRecords(data),stats=monitorDetailStats(records),single=records.length===1?records[0]:null;
-  const facebook=aggregateNetwork(records,'facebook');
   const comments=records.flatMap(item=>(item.comentarios||[]).map(comment=>({...comment,data:item.rotulo})));
   const sources=[...new Map(records.flatMap(item=>item.fontes||[]).map(source=>[source.url,source])).values()];
   const title=single?`${single.rotulo} · ${single.titulo}`:'Todos os dias registrados';
-  const summary=single?single.resumo:`O histórico reúne ${data.historico.length} datas. Há 11 comentários classificados: 8 em 16/08 e 3 em 17/08. Os dias anteriores permanecem marcados como não verificáveis.`;
-  const statusText=single?(single.status==='nao_verificavel'?'Não verificável':'Dados confirmados'):'Cobertura parcial';
-  const statItems=[['Curtidas nas publicações',stats.curtidas],['Comentários exibidos',stats.comentarios_exibidos],['Comentários revisados',stats.comentarios_revisados],['Favoráveis',stats.favoraveis],['Neutros ou mistos',stats.neutros],['Desfavoráveis',stats.desfavoraveis],['Repostagens',stats.repostagens],['Curtidas nos comentários',stats.curtidas_comentarios]];
-  const commentHtml=comments.length?`<details class="monitor-comment-details" ${single?'open':''}><summary>Ver ${comments.length} comentário${comments.length===1?'':'s'} analisado${comments.length===1?'':'s'}</summary><ol>${comments.map(comment=>`<li><blockquote>“${esc(comment.texto)}”</blockquote><span>${esc(comment.data)} · ${esc(comment.valencia)} · Curtidas: ${Number.isFinite(comment.curtidas)?comment.curtidas:'não exibidas'}</span></li>`).join('')}</ol></details>`:'<p class="monitor-no-comments">Nenhum comentário pôde ser classificado nesta data. Isso não deve ser interpretado como zero repercussão.</p>';
+  const summary=single?single.resumo:`O histórico reúne ${data.historico.length} datas, 84 comentários exibidos e 73 comentários relacionados a Kiel que puderam ser classificados. O dia 15/08 registra busca sem novo item localizado, não ausência universal de repercussão.`;
+  const statusText=single?(single.status==='verificado'?'Dados confirmados':single.status==='sem_item_localizado'?'Busca realizada · sem novo item localizado':'Não verificável'):'Cobertura consolidada';
+  const statItems=[['Curtidas e reações',stats.curtidas],['Comentários exibidos',stats.comentarios_exibidos],['Textos abertos',stats.comentarios_revisados],['Favoráveis',stats.favoraveis],['Neutros ou mistos',stats.neutros],['Desfavoráveis',stats.desfavoraveis],['Recompartilhamentos',stats.repostagens],['Visualizações exibidas',stats.visualizacoes]];
+  const commentHtml=comments.length?`<details class="monitor-comment-details" ${single?'open':''}><summary>Ver amostra de ${comments.length} comentário${comments.length===1?'':'s'} relevante${comments.length===1?'':'s'}</summary><ol>${comments.map(comment=>`<li><blockquote>“${esc(comment.texto)}”</blockquote><span>${esc(comment.data)} · ${esc(comment.valencia)} · Curtidas: ${Number.isFinite(comment.curtidas)?comment.curtidas:'não exibidas'}</span>${comment.url?`<a href="${esc(comment.url)}" target="_blank" rel="noopener noreferrer">Abrir comentário ou publicação</a>`:''}</li>`).join('')}</ol></details>`:'<p class="monitor-no-comments">Nenhum texto de comentário foi incluído na amostra desta data. Isso não deve ser interpretado como zero repercussão.</p>';
   const sourceHtml=sources.length?`<div class="monitor-detail-links">${sources.map(source=>`<a href="${esc(source.url)}" target="_blank" rel="noopener noreferrer">${esc(source.label)}</a>`).join('')}</div>`:'';
-  const facebookNote=Number.isFinite(facebook.comentarios_exibidos)&&facebook.comentarios_exibidos>0?` A interface também indicava ${facebook.comentarios_exibidos} comentário${facebook.comentarios_exibidos===1?'':'s'} integrado${facebook.comentarios_exibidos===1?'':'s'} do Facebook; ${facebook.comentarios_exibidos===1?'ele não foi somado':'eles não foram somados'} novamente ao total para evitar possível duplicidade.`:'';
-  target.innerHTML=`<div class="monitor-detail-heading"><div><p class="eyebrow">Detalhe selecionado</p><h2>${esc(title)}</h2></div><span class="monitor-status ${single?.status==='verificado'?'':'unavailable'}">${esc(statusText)}</span></div><p>${esc(summary)}</p><div class="monitor-detail-stats">${statItems.map(([label,value])=>`<div><span>${esc(label)}</span><strong>${monitorNumber(value)}</strong></div>`).join('')}</div><p class="source-note">“Comentários exibidos” é o total mostrado pelo Instagram. “Comentários revisados” é somente o que foi efetivamente aberto e classificado.${facebookNote}</p>${commentHtml}${sourceHtml}`;
+  target.innerHTML=`<div class="monitor-detail-heading"><div><p class="eyebrow">Detalhe selecionado</p><h2>${esc(title)}</h2></div><span class="monitor-status ${single?.status==='verificado'?'':'unavailable'}">${esc(statusText)}</span></div><p>${esc(summary)}</p><div class="monitor-detail-stats">${statItems.map(([label,value])=>`<div><span>${esc(label)}</span><strong>${monitorNumber(value)}</strong></div>`).join('')}</div><p class="source-note">Os totais acima separam as redes e evitam somar novamente comentários integrados do Facebook. A lista abaixo é uma amostra textual dos comentários relevantes; os botões de fonte abrem as publicações examinadas.</p>${commentHtml}${sourceHtml}`;
 }
 function verifiedDailyInteractions(record){
-  if(record.status!=='verificado'||record.tipo!=='publicação oficial')return null;
-  const source=record.redes?.instagram;
-  const metrics=[source?.curtidas,source?.comentarios_exibidos,source?.repostagens];
-  return metrics.every(Number.isFinite)?metrics.reduce((total,value)=>total+value,0):null;
+  if(record.status!=='verificado')return null;
+  const values=Object.values(record.redes||{}).flatMap(source=>[source?.curtidas,source?.comentarios_exibidos,source?.repostagens]).filter(Number.isFinite);
+  return values.length?values.reduce((total,value)=>total+value,0):null;
 }
 function verifiedDailyViews(record){
-  return record.status==='verificado'&&record.tipo==='publicação oficial'&&Number.isFinite(record.visualizacoes_verificadas)?record.visualizacoes_verificadas:null;
+  return record.status==='verificado'&&Number.isFinite(record.visualizacoes_verificadas)?record.visualizacoes_verificadas:null;
 }
-function monitorMetricSeries(data,metric){
-  let cumulative=0,hasCumulative=false;
+function monitorMetricSeries(data,metric,minimumField){
+  let cumulative=0,hasCumulative=false,isMinimum=false;
   return data.historico.map(record=>{
     const daily=metric(record);
-    if(Number.isFinite(daily)){cumulative+=daily;hasCumulative=true}
-    return {data:record.data,rotulo:record.rotulo,daily,cumulative:Number.isFinite(daily)&&hasCumulative?cumulative:null};
+    if(Number.isFinite(daily)){cumulative+=daily;hasCumulative=true;isMinimum=isMinimum||Boolean(minimumField&&record[minimumField])}
+    return {data:record.data,rotulo:record.rotulo,daily,cumulative:hasCumulative?cumulative:null,minimum:Boolean(minimumField&&record[minimumField]),cumulativeMinimum:isMinimum};
   });
 }
 function renderMonitorPairChart(targetId,series,label){
@@ -356,15 +352,16 @@ function renderMonitorPairChart(targetId,series,label){
   const visible=monitorDate==='all'?series:series.filter(item=>item.data===monitorDate);
   const values=visible.flatMap(item=>[item.daily,item.cumulative]).filter(Number.isFinite);
   const maxValue=Math.max(1,...values);
-  const bar=(value,className,title)=>{
+  const bar=(value,className,title,minimum=false)=>{
     const available=Number.isFinite(value),height=available?Math.max(value===0?2:(value/maxValue*100),4):8;
-    return `<span class="monitor-pair-bar ${className} ${available?'':'unavailable'}" style="--bar-height:${height.toFixed(2)}%" title="${esc(title)}: ${available?value.toLocaleString('pt-BR'):'não verificável'}"><b>${available?value.toLocaleString('pt-BR'):'NV'}</b></span>`;
+    const shown=available?`${minimum?'≥':''}${value.toLocaleString('pt-BR')}`:'NV';
+    return `<span class="monitor-pair-bar ${className} ${available?'':'unavailable'}" style="--bar-height:${height.toFixed(2)}%" title="${esc(title)}: ${available?shown:'não verificável'}"><b>${shown}</b></span>`;
   };
-  target.innerHTML=visible.map(item=>`<div class="monitor-pair-column" role="img" aria-label="${esc(item.rotulo)}: ${esc(label)} no dia ${Number.isFinite(item.daily)?item.daily.toLocaleString('pt-BR'):'não verificável'}; acumulado ${Number.isFinite(item.cumulative)?item.cumulative.toLocaleString('pt-BR'):'não verificável'}"><div class="monitor-pair-bars">${bar(item.daily,'daily','No dia')}${bar(item.cumulative,'cumulative','Acumulado')}</div><strong>${esc(item.rotulo)}</strong></div>`).join('');
+  target.innerHTML=visible.map(item=>`<div class="monitor-pair-column" role="img" aria-label="${esc(item.rotulo)}: ${esc(label)} no dia ${Number.isFinite(item.daily)?item.daily.toLocaleString('pt-BR'):'não verificável'}; acumulado ${Number.isFinite(item.cumulative)?item.cumulative.toLocaleString('pt-BR'):'não verificável'}"><div class="monitor-pair-bars">${bar(item.daily,'daily','No dia',item.minimum)}${bar(item.cumulative,'cumulative','Acumulado',item.cumulativeMinimum)}</div><strong>${esc(item.rotulo)}</strong></div>`).join('');
 }
 function renderMonitorVerticalMetrics(data){
   const interactions=monitorMetricSeries(data,verifiedDailyInteractions);
-  const views=monitorMetricSeries(data,verifiedDailyViews);
+  const views=monitorMetricSeries(data,verifiedDailyViews,'visualizacoes_minimas');
   renderMonitorPairChart('#monitor-interactions-bars',interactions,'interações verificadas');
   renderMonitorPairChart('#monitor-views-bars',views,'visualizações verificadas');
   const selectedInteractions=monitorDate==='all'?interactions.at(-1):interactions.find(item=>item.data===monitorDate);
@@ -372,7 +369,7 @@ function renderMonitorVerticalMetrics(data){
   const interactionsTotal=document.querySelector('#monitor-interactions-total');
   const viewsTotal=document.querySelector('#monitor-views-total');
   if(interactionsTotal)interactionsTotal.textContent=Number.isFinite(selectedInteractions?.cumulative)?`${selectedInteractions.cumulative.toLocaleString('pt-BR')} acumuladas`:'Não verificável';
-  if(viewsTotal)viewsTotal.textContent=Number.isFinite(selectedViews?.cumulative)?`${selectedViews.cumulative.toLocaleString('pt-BR')} acumuladas`:'Não verificável';
+  if(viewsTotal)viewsTotal.textContent=Number.isFinite(selectedViews?.cumulative)?`${selectedViews.cumulativeMinimum?'≥':''}${selectedViews.cumulative.toLocaleString('pt-BR')} acumuladas`:'Não verificável';
 }
 function monitorNetworkIcon(key){
   const icons={
