@@ -249,8 +249,15 @@ function renderTerritory(){
   document.querySelector('#demography-sources').innerHTML=citySources+sharedSources;
 }
 let monitorDate='all';
+let monitorMetric='curtidas';
 let monitorDataCache=null;
 const monitorNetworkNames={instagram:'Instagram',facebook:'Facebook',threads:'Threads',tiktok:'TikTok',youtube:'YouTube',x:'X'};
+const monitorMetricConfig={
+  curtidas:{label:'Curtidas e reações',short:'Curtidas',minimum:true},
+  comentarios:{label:'Comentários exibidos',short:'Comentários',minimum:false},
+  repostagens:{label:'Repostagens confirmadas',short:'Repostagens',minimum:true},
+  visualizacoes:{label:'Visualizações exibidas',short:'Visualizações',minimum:true}
+};
 function monitoringData(){
   if(monitorDataCache)return monitorDataCache;
   const node=document.querySelector('#monitoramento-dados');
@@ -268,8 +275,13 @@ function aggregateNetwork(records,key){
     publicacoes:sum('publicacoes'),curtidas:sum('curtidas'),comentarios_exibidos:sum('comentarios_exibidos'),
     comentarios_revisados:sum('comentarios_revisados'),favoraveis:sentiment('favoraveis'),neutros:sentiment('neutros'),
     desfavoraveis:sentiment('desfavoraveis'),nao_classificados:sum('nao_classificados'),repostagens:sum('repostagens'),
-    curtidas_comentarios:sum('curtidas_comentarios'),visualizacoes:sum('visualizacoes')
+    favoritos:sum('favoritos'),curtidas_comentarios:sum('curtidas_comentarios'),visualizacoes:sum('visualizacoes')
   };
+}
+function renderMonitorMetricFilters(){
+  const target=document.querySelector('#monitor-metric-filter');
+  if(!target)return;
+  target.innerHTML=Object.entries(monitorMetricConfig).map(([key,item])=>`<button type="button" class="scope-button ${monitorMetric===key?'active':''}" data-monitor-metric="${key}" aria-pressed="${monitorMetric===key}">${esc(item.short)}</button>`).join('');
 }
 function renderMonitorFilters(data){
   const target=document.querySelector('#monitor-date-filter');
@@ -277,30 +289,43 @@ function renderMonitorFilters(data){
   const buttons=[{data:'all',rotulo:'Todos'},...data.historico.map(item=>({data:item.data,rotulo:item.rotulo}))];
   target.innerHTML=buttons.map(item=>`<button type="button" class="scope-button ${monitorDate===item.data?'active':''}" data-monitor-date="${item.data}" aria-pressed="${monitorDate===item.data}">${esc(item.rotulo)}</button>`).join('');
 }
+function monitorDailyMetric(record,key){
+  if(record.status!=='verificado')return null;
+  if(key==='visualizacoes')return Number.isFinite(record.visualizacoes_verificadas)?record.visualizacoes_verificadas:null;
+  const stats=monitorDetailStats([record]);
+  const map={curtidas:'curtidas',comentarios:'comentarios_exibidos',repostagens:'repostagens'};
+  return stats[map[key]];
+}
 function renderMonitorLineChart(data){
   const target=document.querySelector('#monitor-line-chart');
   if(!target)return;
   const compact=window.matchMedia('(max-width: 620px)').matches;
-  const width=Math.max(compact?920:1000,data.historico.length*84),height=compact?360:420,left=compact?62:78,right=compact?24:38,top=compact?38:42,bottom=compact?66:72,baseline=compact?195:225;
+  const width=Math.max(compact?980:1060,data.historico.length*82),height=compact?350:400,left=compact?72:86,right=compact?28:42,top=compact?48:52,bottom=compact?68:76;
   const chartHistory=data.historico;
-  const maxValue=Math.max(1,...data.historico.flatMap(item=>[item.sentimento?.favoraveis,item.sentimento?.desfavoraveis]).filter(Number.isFinite));
+  const config=monitorMetricConfig[monitorMetric];
+  const values=chartHistory.map(item=>monitorDailyMetric(item,monitorMetric));
+  const maxValue=Math.max(1,...values.filter(Number.isFinite));
   const xAt=index=>left+(width-left-right)*(chartHistory.length===1?.5:index/(chartHistory.length-1));
-  const positiveY=value=>baseline-(Number(value)/maxValue)*(baseline-top-20);
-  const negativeY=value=>baseline+(Number(value)/maxValue)*(height-bottom-baseline-20);
-  const verified=chartHistory.map((item,index)=>({item,index,x:xAt(index)})).filter(point=>Number.isFinite(point.item.sentimento?.favoraveis)&&Number.isFinite(point.item.sentimento?.desfavoraveis));
-  const pathFor=(points,y)=>points.map((point,index)=>`${index?'L':'M'} ${point.x.toFixed(1)} ${y(point.item).toFixed(1)}`).join(' ');
-  const positivePath=pathFor(verified,item=>positiveY(item.sentimento.favoraveis));
-  const negativePath=pathFor(verified,item=>negativeY(item.sentimento.desfavoraveis));
-  const tickValues=[maxValue,Math.ceil(maxValue/2),0,-Math.ceil(maxValue/2),-maxValue];
-  const tickY=value=>value>0?positiveY(value):value<0?negativeY(Math.abs(value)):baseline;
-  const grid=tickValues.map(value=>`<g><line x1="${left}" x2="${width-right}" y1="${tickY(value)}" y2="${tickY(value)}" class="monitor-grid-line ${value===0?'zero':''}"/><text x="${left-16}" y="${tickY(value)+5}" text-anchor="end" class="monitor-axis-label">${value>0?'+':''}${value}</text></g>`).join('');
+  const yAt=value=>height-bottom-(Number(value)/maxValue)*(height-bottom-top);
+  let gap=true;
+  const path=chartHistory.map((item,index)=>{
+    const value=values[index];
+    if(!Number.isFinite(value)){gap=true;return ''}
+    const command=gap?'M':'L';
+    gap=false;
+    return `${command} ${xAt(index).toFixed(1)} ${yAt(value).toFixed(1)}`;
+  }).filter(Boolean).join(' ');
+  const tickValues=[0,.25,.5,.75,1].map(ratio=>Math.round(maxValue*ratio));
+  const grid=[...new Set(tickValues)].map(value=>`<g><line x1="${left}" x2="${width-right}" y1="${yAt(value)}" y2="${yAt(value)}" class="monitor-grid-line ${value===0?'zero':''}"/><text x="${left-16}" y="${yAt(value)+5}" text-anchor="end" class="monitor-axis-label">${Number(value).toLocaleString('pt-BR')}</text></g>`).join('');
   const points=chartHistory.map((item,index)=>{
-    const x=xAt(index),available=Number.isFinite(item.sentimento?.favoraveis)&&Number.isFinite(item.sentimento?.desfavoraveis),selected=monitorDate==='all'||monitorDate===item.data;
-    if(!available)return `<g data-monitor-date="${item.data}" role="button" tabindex="0" aria-label="${esc(item.rotulo)}: sem comentário classificável localizado" class="monitor-svg-point selected"><circle cx="${x}" cy="${baseline}" r="9" class="unavailable"/><text x="${x}" y="${baseline-17}" text-anchor="middle" class="monitor-nv-label">NV</text><text x="${x}" y="${height-35}" text-anchor="middle" class="monitor-date-label">${esc(item.rotulo)}</text></g>`;
-    const py=positiveY(item.sentimento.favoraveis),ny=negativeY(item.sentimento.desfavoraveis);
-    return `<g data-monitor-date="${item.data}" role="button" tabindex="0" aria-label="${esc(item.rotulo)}: ${item.sentimento.favoraveis} favoráveis e ${item.sentimento.desfavoraveis} desfavoráveis" class="monitor-svg-point ${selected?'selected':''}"><circle cx="${x}" cy="${py}" r="8" class="positive"/><text x="${x}" y="${py-15}" text-anchor="middle" class="monitor-point-value positive">+${item.sentimento.favoraveis}</text><circle cx="${x}" cy="${ny}" r="7" class="negative"/><text x="${x}" y="${ny+24}" text-anchor="middle" class="monitor-point-value negative">${item.sentimento.desfavoraveis?'-'+item.sentimento.desfavoraveis:'0'}</text><text x="${x}" y="${height-35}" text-anchor="middle" class="monitor-date-label">${esc(item.rotulo)}</text></g>`;
+    const x=xAt(index),value=values[index],available=Number.isFinite(value),selected=monitorDate==='all'||monitorDate===item.data;
+    if(!available)return `<g data-monitor-date="${item.data}" role="button" tabindex="0" aria-label="${esc(item.rotulo)}: ${esc(config.label)} não verificável" class="monitor-svg-point ${selected?'selected':''}"><circle cx="${x}" cy="${height-bottom}" r="9" class="unavailable"/><text x="${x}" y="${height-bottom-17}" text-anchor="middle" class="monitor-nv-label">NV</text><text x="${x}" y="${height-34}" text-anchor="middle" class="monitor-date-label">${esc(item.rotulo)}</text></g>`;
+    const y=yAt(value),shown=`${config.minimum?'≥':''}${Number(value).toLocaleString('pt-BR')}`;
+    return `<g data-monitor-date="${item.data}" role="button" tabindex="0" aria-label="${esc(item.rotulo)}: ${esc(config.label)} ${shown}" class="monitor-svg-point ${selected?'selected':''}"><circle cx="${x}" cy="${y}" r="8" class="metric"/><text x="${x}" y="${Math.max(24,y-15)}" text-anchor="middle" class="monitor-point-value metric">${shown}</text><text x="${x}" y="${height-34}" text-anchor="middle" class="monitor-date-label">${esc(item.rotulo)}</text></g>`;
   }).join('');
-  target.innerHTML=`<svg viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="monitor-chart-title monitor-chart-desc" preserveAspectRatio="xMidYMid meet"><title id="monitor-chart-title">Comentários favoráveis e desfavoráveis por data</title><desc id="monitor-chart-desc">Valores azuis aparecem acima da linha zero e valores vermelhos aparecem abaixo. Dias sem comentários acessíveis são marcados como NV.</desc>${grid}<text x="${left}" y="22" class="monitor-axis-title">comentários classificados</text>${positivePath?`<path d="${positivePath}" class="monitor-line positive"/>`:''}${negativePath?`<path d="${negativePath}" class="monitor-line negative"/>`:''}${points}</svg>`;
+  target.innerHTML=`<svg viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="monitor-chart-title monitor-chart-desc" preserveAspectRatio="xMidYMid meet"><title id="monitor-chart-title">${esc(config.label)} por data</title><desc id="monitor-chart-desc">Linha com todos os dias monitorados. Cada ponto pode ser selecionado para abrir o detalhe da data.</desc>${grid}<text x="${left}" y="25" class="monitor-axis-title">${esc(config.label.toLowerCase())}</text>${path?`<path d="${path}" class="monitor-line metric"/>`:''}${points}</svg>`;
+  const summary=document.querySelector('#monitor-chart-summary');
+  if(summary){const total=monitorMetric==='comentarios'?data.comentarios_exibidos:monitorMetric==='curtidas'?631:monitorMetric==='repostagens'?67:23184;summary.innerHTML=`<strong>${esc(config.label)}</strong><span>${config.minimum?'≥ ':''}${Number(total).toLocaleString('pt-BR')} no período</span>`}
 }
 function monitorDetailStats(records){
   const networks=Object.keys(monitorNetworkNames).map(key=>aggregateNetwork(records,key));
@@ -313,7 +338,8 @@ function monitorDetailStats(records){
     neutros:sum('neutros'),
     desfavoraveis:sum('desfavoraveis'),
     repostagens:sum('repostagens'),
-    visualizacoes:sum('visualizacoes')
+    visualizacoes:sum('visualizacoes'),
+    favoritos:sum('favoritos')
   };
 }
 function renderMonitorDayDetail(data){
@@ -323,9 +349,9 @@ function renderMonitorDayDetail(data){
   const comments=records.flatMap(item=>(item.comentarios||[]).map(comment=>({...comment,data:item.rotulo})));
   const sources=[...new Map(records.flatMap(item=>item.fontes||[]).map(source=>[source.url,source])).values()];
   const title=single?`${single.rotulo} · ${single.titulo}`:'Todos os dias registrados';
-  const summary=single?single.resumo:`O histórico reúne ${data.historico.length} datas, 84 comentários exibidos e 73 comentários relacionados a Kiel que puderam ser classificados. O dia 15/08 registra busca sem novo item localizado, não ausência universal de repercussão.`;
+  const summary=single?single.resumo:`O histórico reúne ${data.historico.length} datas, ${data.comentarios_exibidos} comentários nos contadores e ${data.comentarios_classificados} comentários públicos classificados. A lacuna de 15/08 foi fechada: não houve publicação própria nova, mas foi confirmado um comentário favorável em uma publicação anterior.`;
   const statusText=single?(single.status==='verificado'?'Dados confirmados':single.status==='sem_item_localizado'?'Busca realizada · sem novo item localizado':'Não verificável'):'Cobertura consolidada';
-  const statItems=[['Curtidas e reações',stats.curtidas],['Comentários exibidos',stats.comentarios_exibidos],['Textos abertos',stats.comentarios_revisados],['Favoráveis',stats.favoraveis],['Neutros ou mistos',stats.neutros],['Desfavoráveis',stats.desfavoraveis],['Recompartilhamentos',stats.repostagens],['Visualizações exibidas',stats.visualizacoes]];
+  const statItems=[['Curtidas e reações',stats.curtidas],['Comentários exibidos',stats.comentarios_exibidos],['Textos abertos',stats.comentarios_revisados],['Favoráveis',stats.favoraveis],['Neutros ou mistos',stats.neutros],['Desfavoráveis',stats.desfavoraveis],['Recompartilhamentos',stats.repostagens],['Favoritos',stats.favoritos],['Visualizações exibidas',stats.visualizacoes]];
   const commentHtml=comments.length?`<details class="monitor-comment-details" ${single?'open':''}><summary>Ver amostra de ${comments.length} comentário${comments.length===1?'':'s'} relevante${comments.length===1?'':'s'}</summary><ol>${comments.map(comment=>`<li><blockquote>“${esc(comment.texto)}”</blockquote><span>${esc(comment.data)} · ${esc(comment.valencia)} · Curtidas: ${Number.isFinite(comment.curtidas)?comment.curtidas:'não exibidas'}</span>${comment.url?`<a href="${esc(comment.url)}" target="_blank" rel="noopener noreferrer">Abrir comentário ou publicação</a>`:''}</li>`).join('')}</ol></details>`:'<p class="monitor-no-comments">Nenhum texto de comentário foi incluído na amostra desta data. Isso não deve ser interpretado como zero repercussão.</p>';
   const sourceHtml=sources.length?`<div class="monitor-detail-links">${sources.map(source=>`<a href="${esc(source.url)}" target="_blank" rel="noopener noreferrer">${esc(source.label)}</a>`).join('')}</div>`:'';
   target.innerHTML=`<div class="monitor-detail-heading"><div><p class="eyebrow">Detalhe selecionado</p><h2>${esc(title)}</h2></div><span class="monitor-status ${single?.status==='verificado'?'':'unavailable'}">${esc(statusText)}</span></div><p>${esc(summary)}</p><div class="monitor-detail-stats">${statItems.map(([label,value])=>`<div><span>${esc(label)}</span><strong>${monitorNumber(value)}</strong></div>`).join('')}</div><p class="source-note">Os totais acima separam as redes e evitam somar novamente comentários integrados do Facebook. A lista abaixo é uma amostra textual dos comentários relevantes; os botões de fonte abrem as publicações examinadas.</p>${commentHtml}${sourceHtml}`;
@@ -387,24 +413,25 @@ function renderMonitorNetworkChart(data){
   if(!target)return;
   const records=selectedMonitorRecords(data);
   const rows=Object.keys(monitorNetworkNames).map(key=>({key,name:monitorNetworkNames[key],data:aggregateNetwork(records,key)}));
-  const categories=[['curtidas','likes','Curtidas'],['favoraveis','positive','Favoráveis'],['neutros','neutral','Neutros'],['desfavoraveis','negative','Desfavoráveis'],['nao_classificados','unclassified','Não classificados'],['repostagens','reposts','Repostagens']];
+  const categories=[['curtidas','likes','Curtidas'],['comentarios_exibidos','comments','Comentários'],['repostagens','reposts','Repostagens'],['favoritos','favorites','Favoritos']];
+  const detailCategories=[...categories.slice(0,2),['favoraveis','positive','Favoráveis'],['neutros','neutral','Neutros'],['desfavoraveis','negative','Desfavoráveis'],['nao_classificados','unclassified','Não classificados'],...categories.slice(2)];
   const totals=rows.map(row=>categories.reduce((total,[key])=>total+(Number.isFinite(row.data[key])?row.data[key]:0),0));
   const maxTotal=Math.max(1,...totals);
   target.innerHTML=rows.map((row,index)=>{
     const total=totals[index],hasAny=categories.some(([key])=>Number.isFinite(row.data[key])&&row.data[key]>0);
     const segments=categories.map(([key,className,label])=>Number.isFinite(row.data[key])&&row.data[key]>0?`<span class="${className}" style="width:${(row.data[key]/maxTotal*100).toFixed(3)}%" title="${label}: ${row.data[key]}"></span>`:'').join('');
-    const metrics=categories.map(([key,,label])=>`<span><b>${esc(label)}:</b> ${monitorNumber(row.data[key])}</span>`).join('');
-    const extras=`Publicações monitoradas: ${monitorNumber(row.data.publicacoes)} · Comentários exibidos: ${monitorNumber(row.data.comentarios_exibidos)} · Revisados: ${monitorNumber(row.data.comentarios_revisados)}`;
+    const metrics=detailCategories.map(([key,,label])=>`<span><b>${esc(label)}:</b> ${monitorNumber(row.data[key])}</span>`).join('');
+    const extras=`Publicações monitoradas: ${monitorNumber(row.data.publicacoes)} · Comentários exibidos: ${monitorNumber(row.data.comentarios_exibidos)} · Revisados: ${monitorNumber(row.data.comentarios_revisados)} · Visualizações: ${monitorNumber(row.data.visualizacoes)}`;
     return `<section class="monitor-network-row" aria-label="${esc(row.name)}"><span class="monitor-network-icon ${row.key}" aria-hidden="true">${monitorNetworkIcon(row.key)}</span><div class="monitor-network-body"><div class="monitor-network-heading"><h3>${esc(row.name)}</h3><strong>${hasAny?total.toLocaleString('pt-BR')+' interações contáveis':'Aguardando métrica verificável'}</strong></div><div class="monitor-network-track" role="img" aria-label="${esc(row.name)}: ${esc(extras)}">${segments||'<span class="empty">Sem número comparável</span>'}</div><div class="monitor-network-metrics">${metrics}</div><p class="source-note">${esc(extras)}${Number.isFinite(row.data.curtidas_comentarios)?` · Curtidas nos comentários: ${row.data.curtidas_comentarios}`:''}</p></div></section>`;
   }).join('');
 }
 function renderMonitoring(){
   const data=monitoringData();
   if(!data||!Array.isArray(data.historico))return;
+  renderMonitorMetricFilters();
   renderMonitorFilters(data);
   renderMonitorLineChart(data);
   renderMonitorDayDetail(data);
-  renderMonitorVerticalMetrics(data);
   renderMonitorNetworkChart(data);
 }
 function renderUsers(){const remote=window.campaignBackend.isRemote(),users=remote?window.campaignBackend.users:window.campaignBackend.users;document.querySelector('#current-user-display').textContent=window.campaignBackend.displayName();document.querySelector('#user-list').innerHTML=users.map((u,i)=>`<span>${i+1}. ${esc(u.display_name)} <small>(${esc(u.role)})</small></span>`).join('');const canManage=window.campaignBackend.isAdmin();const form=document.querySelector('#users-form');form.querySelectorAll('input,select,button[type="submit"]').forEach(element=>element.disabled=!canManage);form.querySelector('.form-intro').textContent=canManage?'O administrador cadastra o e-mail primeiro. Depois, a pessoa usa “Ativar primeiro acesso” na tela de entrada e cria sua própria senha.':'Somente um administrador pode incluir, alterar ou remover acessos.';document.querySelector('#user-fields').innerHTML=`<div class="access-list" role="list">${users.map(u=>`<div class="access-row" role="listitem"><span><strong>${esc(u.display_name)}</strong><small>${esc(u.email)} · ${esc(u.role)}</small></span>${canManage&&u.email!==window.campaignBackend.email()?`<button class="text-button danger" type="button" data-remove-user="${esc(u.email)}">Remover</button>`:''}</div>`).join('')}</div>`}
@@ -421,6 +448,8 @@ function strategicMapMarkdown(){return `# Mapa Estratégico da Campanha — Kiel
 document.addEventListener('click',async e=>{
   const monitorFilter=e.target.closest('[data-monitor-date]');
   if(monitorFilter){monitorDate=monitorFilter.dataset.monitorDate;renderMonitoring();return}
+  const monitorMetricButton=e.target.closest('[data-monitor-metric]');
+  if(monitorMetricButton){monitorMetric=monitorMetricButton.dataset.monitorMetric;renderMonitoring();return}
   const help=e.target.closest('[data-help-button]');
   if(help){const box=help.parentElement.querySelector('.question-help'),open=!box.classList.contains('open');document.querySelectorAll('.question-help.open').forEach(item=>item.classList.remove('open'));document.querySelectorAll('[data-help-button][aria-expanded="true"]').forEach(item=>item.setAttribute('aria-expanded','false'));box.classList.toggle('open',open);help.setAttribute('aria-expanded',String(open));return}
   const scope=e.target.closest('[data-demography-scope]');
