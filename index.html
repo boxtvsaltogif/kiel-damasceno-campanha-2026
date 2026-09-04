@@ -265,7 +265,7 @@
           <div>
             <p class="eyebrow">Evolução diária</p>
             <h2 id="monitor-history-title">Escolha o indicador e analise todos os dias</h2>
-            <p class="source-note">Uma linha por vez mostra curtidas, comentários, repostagens ou visualizações de todas as redes juntas. Os valores são associados à data da publicação; NV indica que o dado diário não pôde ser confirmado.</p>
+            <p class="source-note">Escolha curtidas, comentários negativos, todos os comentários ou visualizações. “R. sociais” usa somente números separáveis das redes próprias; “redes + externo” também inclui publicações de terceiros monitoradas. NV indica dado não confirmado.</p>
           </div>
         </div>
         <div id="monitor-metric-filter" class="monitor-metric-filter" role="group" aria-label="Escolher indicador do gráfico"></div>
@@ -296,6 +296,43 @@
       </section>
 
       <article id="monitor-day-detail" class="card monitor-day-detail" aria-live="polite"></article>
+
+      <section class="monitor-guidance" aria-labelledby="monitor-guidance-title">
+        <div class="section-title monitor-section-title">
+          <div><p class="eyebrow">Apoio rápido para a equipe</p><h2 id="monitor-guidance-title">Como responder e transformar a conversa em conteúdo</h2></div>
+        </div>
+        <div class="monitor-guidance-grid">
+          <article class="card monitor-guidance-card response">
+            <p class="eyebrow">Resposta e tom</p>
+            <h3>Calmo, curto e humano</h3>
+            <ul>
+              <li>Reconheça a dúvida ou o problema antes de explicar.</li>
+              <li>Use linguagem simples, sem ironia e sem discutir com a pessoa.</li>
+              <li>Explique o que um deputado estadual pode fazer e informe o próximo passo.</li>
+              <li>Se houver caso pessoal, convide para o canal oficial; não peça dados pessoais em público.</li>
+            </ul>
+          </article>
+          <article class="card monitor-guidance-card engagement">
+            <p class="eyebrow">Marketing político</p>
+            <h3>Mais clareza gera mais conversa útil</h3>
+            <ul>
+              <li>Comece pelo problema real, mostre a responsabilidade de cada órgão e termine com uma ação verificável.</li>
+              <li>Use vídeos curtos com legenda, fonte na tela e uma pergunta aberta no final.</li>
+              <li>Volte ao tema depois para mostrar o que foi cobrado, respondido ou ainda está pendente.</li>
+            </ul>
+          </article>
+          <article class="card monitor-guidance-card content">
+            <p class="eyebrow">Ideias de conteúdo</p>
+            <h3>Responder à principal indagação: falta de água</h3>
+            <ul>
+              <li>Vídeo: “O que um deputado estadual pode fazer pela água?”</li>
+              <li>Carrossel: “Quem cuida do abastecimento e como cobrar cada órgão”.</li>
+              <li>Quadro semanal: “O que cobramos, qual foi a resposta e o próximo passo”.</li>
+            </ul>
+            <p class="source-note">Sugestões baseadas na amostra atual; não representam pesquisa eleitoral.</p>
+          </article>
+        </div>
+      </section>
 
       <div class="section-title monitor-section-title">
         <div><p class="eyebrow">Clipping</p><h2>Publicações confirmadas</h2></div>
@@ -446,7 +483,7 @@
   </div>
   <script type="application/json" id="monitoramento-dados">
   {
-    "schema_version": 5,
+    "schema_version": 6,
     "entidade": "Kiel Damasceno",
     "periodo": { "inicio": "2026-08-12", "fim": "2026-08-24" },
     "coleta": "2026-08-25T13:15:00-03:00",
@@ -462,7 +499,7 @@
     "historico": [
       {
         "data": "2026-08-12", "rotulo": "12/08", "titulo": "Candidatura e cobertura do Jornal de Salto", "tipo": "monitoramento diário", "status": "verificado",
-        "visualizacoes_verificadas": 944, "visualizacoes_minimas": true,
+        "visualizacoes_verificadas": 944, "visualizacoes_minimas": true, "visualizacoes_redes_proprias": 944,
         "resumo": "Duas publicações no Instagram e uma republicação no Threads foram examinadas. Quatro comentários eram favoráveis a Kiel; cinco comentários do Jornal de Salto tratavam de outros candidatos e foram mantidos fora do saldo.",
         "sentimento": { "favoraveis": 4, "neutros": 0, "desfavoraveis": 0 },
         "redes": {
@@ -485,7 +522,7 @@
       },
       {
         "data": "2026-08-13", "rotulo": "13/08", "titulo": "Apresentação da trajetória e entrevista", "tipo": "monitoramento diário", "status": "verificado",
-        "visualizacoes_verificadas": 1871,
+        "visualizacoes_verificadas": 1871, "visualizacoes_redes_proprias": null,
         "resumo": "O Reel oficial e a publicação do Falando com Jhon reuniram 19 comentários exibidos. Dezoito foram favoráveis; um comentário integrado do Facebook não pôde ser aberto.",
         "sentimento": { "favoraveis": 18, "neutros": 0, "desfavoraveis": 0 },
         "redes": {
@@ -508,7 +545,7 @@
       },
       {
         "data": "2026-08-14", "rotulo": "14/08", "titulo": "Saúde e escuta da população", "tipo": "monitoramento diário", "status": "verificado",
-        "visualizacoes_verificadas": 2695, "visualizacoes_minimas": true,
+        "visualizacoes_verificadas": 2695, "visualizacoes_minimas": true, "visualizacoes_redes_proprias": 2695,
         "resumo": "No próprio dia 14, o Reel recebeu quatro comentários favoráveis e um relato neutro sobre a precariedade da saúde. Um comentário favorável posterior foi atribuído corretamente a 15/08. As publicações do TikTok não receberam comentários no dia 14; as três manifestações posteriores foram distribuídas entre 16, 17 e 23/08.",
         "sentimento": { "favoraveis": 4, "neutros": 1, "desfavoraveis": 0 },
         "redes": {
@@ -529,7 +566,7 @@
       },
       {
         "data": "2026-08-15", "rotulo": "15/08", "titulo": "Comentário novo em publicação anterior", "tipo": "monitoramento diário", "status": "verificado",
-        "visualizacoes_verificadas": null,
+        "visualizacoes_verificadas": null, "visualizacoes_redes_proprias": null,
         "resumo": "Não houve publicação própria nova. Uma publicação do Instagram de 14/08 recebeu em 15/08 um comentário favorável sobre saúde e reconhecimento do trabalho de Kiel. No TikTok, as três publicações anteriores examinadas somaram zero comentário datado de 15/08; a cópia do Facebook de 14/08 confirmou zero comentário. O YouTube não apresentou vídeo relevante. O Threads permaneceu sem sessão autenticada e não foi tratado como ausência de repercussão.",
         "sentimento": { "favoraveis": 1, "neutros": 0, "desfavoraveis": 0 },
         "redes": {
@@ -551,7 +588,7 @@
       },
       {
         "data": "2026-08-16", "rotulo": "16/08", "titulo": "Anúncio do número 33999", "tipo": "monitoramento diário", "status": "verificado",
-        "visualizacoes_verificadas": 559, "visualizacoes_minimas": true,
+        "visualizacoes_verificadas": 559, "visualizacoes_minimas": true, "visualizacoes_redes_proprias": 559,
         "resumo": "A publicação do dia exibia 49 curtidas, 21 comentários e 14 repostagens. Dezoito comentários legíveis eram favoráveis; dois integrados do Facebook e um comentário adicional ficaram sem classificação. Uma publicação anterior no TikTok recebeu mais um comentário favorável em 16/08.",
         "sentimento": { "favoraveis": 19, "neutros": 0, "desfavoraveis": 0 },
         "redes": {
@@ -576,7 +613,7 @@
       },
       {
         "data": "2026-08-17", "rotulo": "17/08", "titulo": "Gabinete sem porta e matéria externa", "tipo": "monitoramento diário", "status": "verificado",
-        "visualizacoes_verificadas": 1633,
+        "visualizacoes_verificadas": 1633, "visualizacoes_redes_proprias": null,
         "resumo": "O Reel oficial teve quatro manifestações favoráveis. Na publicação externa apareceu uma crítica direta sobre falta de água, uma afirmação patrimonial indireta e um comentário editorial sem relação direta com Kiel. Uma publicação anterior no TikTok recebeu também um comentário favorável em 17/08.",
         "sentimento": { "favoraveis": 5, "neutros": 1, "desfavoraveis": 1 },
         "redes": {
@@ -599,7 +636,7 @@
       },
       {
         "data": "2026-08-18", "rotulo": "18/08", "titulo": "Publicação oficial", "tipo": "monitoramento diário", "status": "verificado",
-        "visualizacoes_verificadas": null,
+        "visualizacoes_verificadas": null, "visualizacoes_redes_proprias": null,
         "resumo": "A publicação mostrava 22 curtidas, um comentário e duas repostagens. O comentário foi classificado como misto ou ambíguo.",
         "sentimento": { "favoraveis": 0, "neutros": 1, "desfavoraveis": 0 },
         "redes": { "instagram": { "publicacoes": 1, "curtidas": 22, "comentarios_exibidos": 1, "comentarios_revisados": 1, "favoraveis": 0, "neutros": 1, "desfavoraveis": 0, "nao_classificados": 0, "repostagens": 2, "curtidas_comentarios": null, "visualizacoes": null } },
@@ -608,7 +645,7 @@
       },
       {
         "data": "2026-08-19", "rotulo": "19/08", "titulo": "Publicação oficial", "tipo": "monitoramento diário", "status": "verificado",
-        "visualizacoes_verificadas": null,
+        "visualizacoes_verificadas": null, "visualizacoes_redes_proprias": null,
         "resumo": "A publicação mostrava 21 curtidas, três comentários e duas repostagens. Os três comentários eram favoráveis.",
         "sentimento": { "favoraveis": 3, "neutros": 0, "desfavoraveis": 0 },
         "redes": { "instagram": { "publicacoes": 1, "curtidas": 21, "comentarios_exibidos": 3, "comentarios_revisados": 3, "favoraveis": 3, "neutros": 0, "desfavoraveis": 0, "nao_classificados": 0, "repostagens": 2, "curtidas_comentarios": null, "visualizacoes": null } },
@@ -617,7 +654,7 @@
       },
       {
         "data": "2026-08-20", "rotulo": "20/08", "titulo": "Reel e três publicações estáticas", "tipo": "monitoramento diário", "status": "verificado",
-        "visualizacoes_verificadas": 1643,
+        "visualizacoes_verificadas": 1643, "visualizacoes_redes_proprias": 1643,
         "resumo": "Quatro publicações no Instagram e quatro republicações no Threads foram deduplicadas. Os sete comentários legíveis eram favoráveis, incluindo três comentários integrados do Facebook.",
         "sentimento": { "favoraveis": 7, "neutros": 0, "desfavoraveis": 0 },
         "redes": {
@@ -640,7 +677,7 @@
       },
       {
         "data": "2026-08-21", "rotulo": "21/08", "titulo": "Representação pública e água", "tipo": "monitoramento diário", "status": "verificado",
-        "visualizacoes_verificadas": 12342, "visualizacoes_minimas": true,
+        "visualizacoes_verificadas": 12342, "visualizacoes_minimas": true, "visualizacoes_redes_proprias": 12342,
         "resumo": "O Reel no Instagram reuniu duas manifestações favoráveis e um relato neutro. No TikTok, a publicação alcançou 10,8 mil visualizações, 202 curtidas e 35 no contador; foram abertos 33 textos publicados até 23/08, com 7 favoráveis, 3 neutros ou mistos, 19 desfavoráveis e 4 indeterminados.",
         "sentimento": { "favoraveis": 9, "neutros": 4, "desfavoraveis": 19 },
         "redes": {
@@ -659,7 +696,7 @@
       },
       {
         "data": "2026-08-22", "rotulo": "22/08", "titulo": "Água e representação", "tipo": "monitoramento diário", "status": "verificado",
-        "visualizacoes_verificadas": 1494,
+        "visualizacoes_verificadas": 1494, "visualizacoes_redes_proprias": 1494,
         "resumo": "O Reel reuniu três manifestações favoráveis e dois comentários neutros: uma indicação de bairro e um pedido por solução rápida e representação.",
         "sentimento": { "favoraveis": 3, "neutros": 2, "desfavoraveis": 0 },
         "redes": {
@@ -678,7 +715,7 @@
       },
       {
         "data": "2026-08-23", "rotulo": "23/08", "titulo": "Fiscalização independente", "tipo": "monitoramento diário", "status": "verificado",
-        "visualizacoes_verificadas": null,
+        "visualizacoes_verificadas": null, "visualizacoes_redes_proprias": null,
         "resumo": "A publicação estática mostrava 19 curtidas, três comentários e uma repostagem. Dois comentários eram favoráveis; um comentário integrado do Facebook não pôde ser aberto. Um vídeo anterior no TikTok recebeu também uma manifestação favorável em 23/08.",
         "sentimento": { "favoraveis": 3, "neutros": 0, "desfavoraveis": 0 },
         "redes": {
@@ -695,7 +732,7 @@
       },
       {
         "data": "2026-08-24", "rotulo": "24/08", "titulo": "Saneamento e novos comentários no TikTok", "tipo": "monitoramento diário", "status": "verificado",
-        "visualizacoes_verificadas": 3, "visualizacoes_minimas": true,
+        "visualizacoes_verificadas": 3, "visualizacoes_minimas": true, "visualizacoes_redes_proprias": 3,
         "resumo": "Uma publicação original sobre saneamento apareceu no Instagram, Threads e Facebook. O vídeo de 21/08 no TikTok recebeu três novos textos: dois públicos — um favorável e um neutro ou indireto — e uma resposta da conta conectada, excluída do termômetro orgânico.",
         "sentimento": { "favoraveis": 1, "neutros": 1, "desfavoraveis": 0 },
         "redes": {
