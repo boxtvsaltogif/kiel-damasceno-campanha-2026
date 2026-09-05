@@ -253,12 +253,12 @@ let monitorMetric='curtidas';
 let monitorDataCache=null;
 const monitorNetworkNames={instagram:'Instagram',facebook:'Facebook',threads:'Threads',tiktok:'TikTok',youtube:'YouTube',x:'X'};
 const monitorMetricConfig={
-  curtidas:{label:'Curtidas e reações',short:'Curtidas',minimum:true,total:631},
-  comentarios_negativos:{label:'Comentários negativos',short:'Comentários negativos',minimum:false,total:20,tone:'negative'},
-  comentarios:{label:'Todos os comentários',short:'Todos os comentários',minimum:false,total:122},
-  repostagens:{label:'Repostagens confirmadas',short:'Repostagens',minimum:true,total:67},
+  curtidas:{label:'Curtidas e reações nos posts da data',short:'Curtidas',minimum:false},
+  comentarios_negativos:{label:'Comentários negativos catalogados na data',short:'Comentários negativos',minimum:false,tone:'negative'},
+  comentarios:{label:'Comentários exibidos nos posts da data',short:'Todos os comentários',minimum:false},
+  repostagens:{label:'Repostagens exibidas nos posts da data',short:'Repostagens',minimum:true},
   visualizacoes_redes:{label:'Visualizações nas redes próprias',short:'Visualizações R. sociais',minimum:true},
-  visualizacoes_total:{label:'Visualizações nas redes e fontes externas',short:'Visualizações redes + externo',minimum:true,total:23184}
+  visualizacoes_total:{label:'Visualizações nas redes e fontes externas',short:'Visualizações redes + externo',minimum:true}
 };
 function monitoringData(){
   if(monitorDataCache)return monitorDataCache;
@@ -329,8 +329,11 @@ function renderMonitorLineChart(data){
   target.innerHTML=`<svg viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="monitor-chart-title monitor-chart-desc" preserveAspectRatio="xMidYMid meet"><title id="monitor-chart-title">${esc(config.label)} por data</title><desc id="monitor-chart-desc">Linha com todos os dias monitorados. Cada ponto pode ser selecionado para abrir o detalhe da data.</desc>${grid}<text x="${left}" y="25" class="monitor-axis-title">${esc(config.label.toLowerCase())}</text>${path?`<path d="${path}" class="monitor-line metric ${config.tone||''}"/>`:''}${points}</svg>`;
   const summary=document.querySelector('#monitor-chart-summary');
   if(summary){
-    const total=Number.isFinite(config.total)?config.total:data.historico.map(item=>monitorDailyMetric(item,monitorMetric)).filter(Number.isFinite).reduce((sum,value)=>sum+value,0);
-    summary.innerHTML=`<strong>${esc(config.label)}</strong><span>${config.minimum?'≥ ':''}${Number(total).toLocaleString('pt-BR')} no período</span>`;
+    const selected=monitorDate==='all'?null:data.historico.find(item=>item.data===monitorDate);
+    const value=selected?monitorDailyMetric(selected,monitorMetric):null;
+    summary.innerHTML=selected
+      ?`<strong>${esc(config.label)}</strong><span>${Number.isFinite(value)?`${config.minimum?'≥ ':''}${Number(value).toLocaleString('pt-BR')} em ${esc(selected.rotulo)}`:`Não verificável em ${esc(selected.rotulo)}`}</span>`
+      :`<strong>${esc(config.label)}</strong><span>Total acumulado: não verificável · linha compara as fotografias de cada data</span>`;
   }
 }
 function monitorDetailStats(records){
@@ -351,10 +354,11 @@ function monitorDetailStats(records){
 function renderMonitorDayDetail(data){
   const target=document.querySelector('#monitor-day-detail');
   if(!target)return;
-  const records=selectedMonitorRecords(data),stats=monitorDetailStats(records),single=records.length===1?records[0]:null;
-  const comments=records.flatMap(item=>(item.comentarios||[]).map(comment=>({...comment,data:item.rotulo})));
-  const title=single?`${single.rotulo} · ${single.titulo}`:'Todos os dias registrados';
-  const summary=single?single.resumo:`O histórico reúne ${data.historico.length} datas, ${data.comentarios_exibidos} comentários nos contadores e ${data.comentarios_classificados} comentários públicos classificados. A lacuna de 15/08 foi fechada: não houve publicação própria nova, mas foi confirmado um comentário favorável em uma publicação anterior.`;
+  const records=selectedMonitorRecords(data),single=records.length===1?records[0]:null;
+  const stats=monitorDate==='all'&&data.ultimo_periodo?.redes?monitorDetailStats([{redes:data.ultimo_periodo.redes}]):monitorDetailStats(records);
+  const comments=records.flatMap(item=>(item.comentarios||[]).map(comment=>({data:item.rotulo,...comment})));
+  const title=single?`${single.rotulo} · ${single.titulo}`:'Histórico completo e fotografia mais recente';
+  const summary=single?single.resumo:`O histórico reúne ${data.historico.length} datas entre 12/08 e 02/09. Há ${comments.length} textos relevantes salvos neste painel. O total acumulado de curtidas, comentários, compartilhamentos e visualizações permanece não verificável porque várias publicações foram revisitadas em horários diferentes.`;
   const statusText=single?(single.status==='verificado'?'Dados confirmados':single.status==='sem_item_localizado'?'Busca realizada · sem novo item localizado':'Não verificável'):'Cobertura consolidada';
   const statItems=[['Curtidas e reações',stats.curtidas],['Comentários exibidos',stats.comentarios_exibidos],['Textos abertos',stats.comentarios_revisados],['Favoráveis',stats.favoraveis],['Neutros ou mistos',stats.neutros],['Desfavoráveis',stats.desfavoraveis],['Recompartilhamentos',stats.repostagens],['Favoritos',stats.favoritos],['Visualizações exibidas',stats.visualizacoes]];
   const commentType=comment=>{const value=String(comment.valencia||'').toLowerCase();return value.startsWith('favor')?'positive':value.startsWith('desfavor')?'negative':'neutral'};
@@ -364,7 +368,8 @@ function renderMonitorDayDetail(data){
   const neutrals=comments.filter(comment=>commentType(comment)==='neutral');
   const negativeOnly=monitorMetric==='comentarios_negativos';
   const commentHtml=comments.length?`<details class="monitor-comment-details" ${single||negativeOnly?'open':''}><summary>${negativeOnly?`Ver comentários negativos com texto salvo (${negatives.length})`:`Ver todos os ${comments.length} comentários relevantes com texto salvo`}</summary>${negativeOnly?`<section class="monitor-comment-single negative"><h3>Comentários negativos (${negatives.length})</h3>${negatives.length?`<ol>${negatives.map(commentCard).join('')}</ol>`:'<p class="monitor-no-comments">Nenhum comentário negativo com texto salvo nesta seleção.</p>'}</section>`:`<div class="monitor-comment-board"><section class="monitor-comment-column positive"><h3>Comentários positivos (${positives.length})</h3>${positives.length?`<ol>${positives.map(commentCard).join('')}</ol>`:'<p class="monitor-no-comments">Nenhum comentário positivo com texto salvo nesta seleção.</p>'}</section><section class="monitor-comment-column negative"><h3>Comentários negativos (${negatives.length})</h3>${negatives.length?`<ol>${negatives.map(commentCard).join('')}</ol>`:'<p class="monitor-no-comments">Nenhum comentário negativo com texto salvo nesta seleção.</p>'}</section></div>${neutrals.length?`<section class="monitor-comment-neutral"><h3>Neutros, relatos ou pendentes (${neutrals.length})</h3><ol>${neutrals.map(commentCard).join('')}</ol></section>`:''}`}</details>`:'<p class="monitor-no-comments">Nenhum texto de comentário foi salvo nesta data. Isso não deve ser interpretado como zero repercussão.</p>';
-  target.innerHTML=`<div class="monitor-detail-heading"><div><p class="eyebrow">Detalhe selecionado</p><h2>${esc(title)}</h2></div><span class="monitor-status ${single?.status==='verificado'?'':'unavailable'}">${esc(statusText)}</span></div><p>${esc(summary)}</p><div class="monitor-detail-stats">${statItems.map(([label,value])=>`<div><span>${esc(label)}</span><strong>${monitorNumber(value)}</strong></div>`).join('')}</div><p class="source-note">Os totais evitam duplicações entre redes. A área abaixo mostra todos os comentários cujo texto foi salvo neste painel; os totais classificados podem ser maiores. Cada comentário mantém um link direto para conferência.</p>${commentHtml}`;
+  const statsNote=monitorDate==='all'?'Os indicadores acima pertencem à última janela fechada, 01–02/09, e não são uma soma do histórico. A área abaixo reúne os textos relevantes salvos em todas as datas.':'Os indicadores acima pertencem à data selecionada. A área abaixo mostra os comentários relevantes cujo texto foi salvo.';
+  target.innerHTML=`<div class="monitor-detail-heading"><div><p class="eyebrow">Detalhe selecionado</p><h2>${esc(title)}</h2></div><span class="monitor-status ${single?.status==='verificado'?'':'unavailable'}">${esc(statusText)}</span></div><p>${esc(summary)}</p><div class="monitor-detail-stats">${statItems.map(([label,value])=>`<div><span>${esc(label)}</span><strong>${monitorNumber(value)}</strong></div>`).join('')}</div><p class="source-note">${esc(statsNote)} Cada comentário mantém um link direto para conferência.</p>${commentHtml}`;
 }
 function verifiedDailyInteractions(record){
   if(record.status!=='verificado')return null;
@@ -422,7 +427,7 @@ function renderMonitorNetworkChart(data){
   const target=document.querySelector('#monitor-network-chart');
   if(!target)return;
   const records=selectedMonitorRecords(data);
-  const rows=Object.keys(monitorNetworkNames).map(key=>({key,name:monitorNetworkNames[key],data:aggregateNetwork(records,key)}));
+  const rows=Object.keys(monitorNetworkNames).map(key=>({key,name:monitorNetworkNames[key],data:monitorDate==='all'&&data.ultimo_periodo?.redes?.[key]?data.ultimo_periodo.redes[key]:aggregateNetwork(records,key)}));
   const categories=[['curtidas','likes','Curtidas'],['comentarios_exibidos','comments','Comentários'],['repostagens','reposts','Repostagens'],['favoritos','favorites','Favoritos']];
   const detailCategories=[...categories.slice(0,2),['favoraveis','positive','Favoráveis'],['neutros','neutral','Neutros'],['desfavoraveis','negative','Desfavoráveis'],['nao_classificados','unclassified','Não classificados'],...categories.slice(2)];
   const totals=rows.map(row=>categories.reduce((total,[key])=>total+(Number.isFinite(row.data[key])?row.data[key]:0),0));
@@ -431,7 +436,7 @@ function renderMonitorNetworkChart(data){
     const total=totals[index],hasAny=categories.some(([key])=>Number.isFinite(row.data[key])&&row.data[key]>0);
     const segments=categories.map(([key,className,label])=>Number.isFinite(row.data[key])&&row.data[key]>0?`<span class="${className}" style="width:${(row.data[key]/maxTotal*100).toFixed(3)}%" title="${label}: ${row.data[key]}"></span>`:'').join('');
     const metrics=detailCategories.map(([key,,label])=>`<span><b>${esc(label)}:</b> ${monitorNumber(row.data[key])}</span>`).join('');
-    const extras=`Publicações monitoradas: ${monitorNumber(row.data.publicacoes)} · Comentários exibidos: ${monitorNumber(row.data.comentarios_exibidos)} · Revisados: ${monitorNumber(row.data.comentarios_revisados)} · Visualizações: ${monitorNumber(row.data.visualizacoes)}`;
+    const extras=`${monitorDate==='all'?'Última janela fechada (01–02/09)':'Data selecionada'} · Publicações monitoradas: ${monitorNumber(row.data.publicacoes)} · Comentários exibidos: ${monitorNumber(row.data.comentarios_exibidos)} · Revisados: ${monitorNumber(row.data.comentarios_revisados)} · Visualizações: ${monitorNumber(row.data.visualizacoes)}`;
     return `<section class="monitor-network-row" aria-label="${esc(row.name)}"><span class="monitor-network-icon ${row.key}" aria-hidden="true">${monitorNetworkIcon(row.key)}</span><div class="monitor-network-body"><div class="monitor-network-heading"><h3>${esc(row.name)}</h3><strong>${hasAny?total.toLocaleString('pt-BR')+' interações contáveis':'Aguardando métrica verificável'}</strong></div><div class="monitor-network-track" role="img" aria-label="${esc(row.name)}: ${esc(extras)}">${segments||'<span class="empty">Sem número comparável</span>'}</div><div class="monitor-network-metrics">${metrics}</div><p class="source-note">${esc(extras)}${Number.isFinite(row.data.curtidas_comentarios)?` · Curtidas nos comentários: ${row.data.curtidas_comentarios}`:''}</p></div></section>`;
   }).join('');
 }
