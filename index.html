@@ -238,79 +238,39 @@
     </section>
 
     <section id="monitoramento" class="view monitor-view" aria-labelledby="monitoramento-title" hidden>
-      <div class="page-heading">
-        <p class="eyebrow">Monitoramento de reputação política</p>
-        <h1 id="monitoramento-title">Monitoramento — 12/08 a 02/09/2026, até 22h59</h1>
-        <p>Histórico de publicações, interações e comentários verificáveis. Os contadores de períodos diferentes permanecem separados para evitar somas falsas de uma mesma publicação.</p>
-      </div>
+      <header class="monitor-dashboard-heading">
+        <div><p class="eyebrow">Monitoramento de reputação política</p><h1 id="monitoramento-title">O que estão falando do Kiel</h1><p>Interações, comentários e assuntos que merecem atenção.</p></div>
+        <span class="monitor-update">Base atualizada em 03/09/2026, às 14h</span>
+      </header>
 
-      <div class="monitor-meta" aria-label="Informações da coleta">
-        <span>Atualização da base: 03/09/2026, às 14h</span>
-        <span>Período monitorado: 12/08–02/09/2026, até 22h59</span>
-        <span>Confiança geral: baixa</span>
-        <span>Última janela fechada: 01–02/09 · 109 manifestações catalogadas</span>
-      </div>
+      <section class="card monitor-control-panel" aria-label="Filtros do monitoramento">
+        <label>De<input id="monitor-start-date" type="date" min="2026-08-12" max="2026-09-02" value="2026-08-12"></label>
+        <label>Até<input id="monitor-end-date" type="date" min="2026-08-12" max="2026-09-02" value="2026-09-02"></label>
+        <label>Rede social<select id="monitor-network-filter"><option value="all">Todas as redes</option><option value="instagram">Instagram</option><option value="facebook">Facebook</option><option value="tiktok">TikTok</option><option value="youtube">YouTube</option><option value="threads">Threads</option><option value="x">X</option></select></label>
+        <button id="monitor-apply-range" class="primary" type="button">Aplicar período</button>
+      </section>
+      <div class="monitor-quick-filters" role="group" aria-label="Períodos rápidos"><button type="button" data-monitor-range="all">Todo o histórico</button><button type="button" data-monitor-range="latest">Última janela fechada</button><button type="button" data-monitor-range="day">Último dia</button></div>
+      <p id="monitor-filter-summary" class="monitor-filter-summary" aria-live="polite"></p>
 
-      <div class="notice safe"><strong>Resumo mais recente:</strong> nos 13 posts publicados em 01–02/09, os contadores observados em 03/09 mostravam 1.198 curtidas ou reações, 78 comentários após deduplicação, pelo menos 41 compartilhamentos e aproximadamente 62.554 visualizações. Foram catalogadas 109 manifestações com data dentro da janela: 90 favoráveis, 11 neutras, nenhuma negativa inequívoca e 8 indeterminadas. Esses contadores não representam crescimento recebido somente nesses dois dias.</div>
-
-      <div class="kpi-grid monitor-kpis" aria-label="Indicadores do monitoramento">
-        <article><span>Curtidas e reações</span><strong>1.198</strong><small>13 posts de 01–02/09</small></article>
-        <article><span>Manifestações catalogadas</span><strong>109</strong><small>90 positivas · 11 neutras · 8 outras</small></article>
-        <article><span>Recompartilhamentos</span><strong>≥41</strong><small>Contadores disponíveis de 01–02/09</small></article>
-        <article><span>Visualizações</span><strong>≈62.554</strong><small>Soma dos contadores dos 13 posts</small></article>
-      </div>
+      <div id="monitor-kpi-cards" class="monitor-kpi-dashboard" aria-label="Indicadores; clique para mudar o gráfico"></div>
 
       <section class="monitor-history" aria-labelledby="monitor-history-title">
-        <div class="section-title monitor-section-title">
-          <div>
-            <p class="eyebrow">Evolução diária</p>
-            <h2 id="monitor-history-title">Escolha o indicador e analise todos os dias</h2>
-            <p class="source-note">Escolha curtidas, comentários negativos, todos os comentários ou visualizações. A linha compara fotografias de cada data; ela não soma o histórico, porque o mesmo post pode ter sido observado mais de uma vez. “R. sociais” exclui canais externos. NV indica dado não confirmado.</p>
-          </div>
-        </div>
-        <div id="monitor-metric-filter" class="monitor-metric-filter" role="group" aria-label="Escolher indicador do gráfico"></div>
-        <div id="monitor-date-filter" class="monitor-date-filter" role="group" aria-label="Escolher data do monitoramento"></div>
         <article class="card monitor-chart-card">
+          <div class="monitor-chart-heading"><div><p class="eyebrow">Evolução por data de coleta</p><h2 id="monitor-history-title">Escolha uma métrica e abra os pontos</h2></div><span id="monitor-chart-network" class="monitor-status">Todas as redes</span></div>
           <div id="monitor-chart-summary" class="monitor-chart-summary" aria-live="polite"></div>
-          <div id="monitor-line-chart" class="monitor-line-chart" aria-live="polite"></div>
-        </article>
-      </section>
-
-      <section class="monitor-networks" aria-labelledby="monitor-networks-title">
-        <div class="section-title monitor-section-title">
-          <div>
-            <p class="eyebrow">Engajamento por rede</p>
-            <h2 id="monitor-networks-title">Interações confirmadas até agora</h2>
-            <p class="source-note">As barras usam apenas números efetivamente exibidos e incluem publicações oficiais e menções externas monitoradas. “Não verificável” não é contado como zero.</p>
-          </div>
-        </div>
-        <article class="card monitor-network-card">
-          <div class="monitor-network-legend" aria-label="Legenda das barras">
-            <span class="likes">Curtidas</span>
-            <span class="comments">Comentários</span>
-            <span class="reposts">Repostagens</span>
-            <span class="favorites">Favoritos</span>
-          </div>
-          <div id="monitor-network-chart" class="monitor-network-chart" aria-live="polite"></div>
-        </article>
-        <article class="card monitor-followers-card" aria-labelledby="monitor-followers-title">
-          <div>
-            <p class="eyebrow">Tamanho das comunidades</p>
-            <h3 id="monitor-followers-title">Seguidores observados em 03/09</h3>
-            <p class="source-note">A soma não representa pessoas únicas. O canal antigo do YouTube ainda não foi confirmado como canal atual da campanha.</p>
-          </div>
-          <div class="monitor-followers-grid">
-            <span><b>Instagram</b><strong>4.520</strong></span>
-            <span><b>Facebook</b><strong>≈4.203</strong></span>
-            <span><b>TikTok</b><strong>897</strong></span>
-            <span><b>Threads</b><strong>123</strong></span>
-            <span><b>YouTube antigo</b><strong>7</strong></span>
-            <span class="total"><b>Soma aproximada</b><strong>≈9.750</strong></span>
-          </div>
+          <div class="monitor-chart-wrap"><div id="monitor-line-chart" class="monitor-line-chart" aria-live="polite"></div><div id="monitor-point-tooltip" class="monitor-point-tooltip" hidden></div></div>
+          <p class="source-note">Passe o mouse, use o teclado ou toque no ponto para ver o título e as fontes daquele dia. Clique para manter o detalhe aberto. NV significa não verificável.</p>
+          <details class="monitor-method-note"><summary>Como interpretar os números?</summary><p>As datas representam fotografias dos contadores no momento da coleta. O mesmo post pode aparecer em mais de uma fotografia. Por isso, o painel compara os dias e não apresenta a soma histórica como crescimento.</p></details>
         </article>
       </section>
 
       <article id="monitor-day-detail" class="card monitor-day-detail" aria-live="polite"></article>
+
+      <section class="monitor-networks" aria-labelledby="monitor-networks-title">
+        <div class="section-title monitor-section-title"><div><p class="eyebrow">De onde vieram as interações</p><h2 id="monitor-networks-title">Redes sociais no período selecionado</h2><p class="source-note">Clique em uma rede para filtrar o painel. Ausência de número aparece como “Não verificável”.</p></div></div>
+        <article class="card monitor-network-card"><div class="monitor-network-legend" aria-label="Legenda das barras"><span class="likes">Curtidas</span><span class="comments">Comentários</span><span class="reposts">Repostagens</span><span class="favorites">Favoritos</span></div><div id="monitor-network-chart" class="monitor-network-chart" aria-live="polite"></div></article>
+        <details class="card monitor-followers-card" aria-labelledby="monitor-followers-title"><summary><span><span class="eyebrow">Tamanho das comunidades</span><strong id="monitor-followers-title">Ver seguidores observados em 03/09</strong></span></summary><div class="monitor-followers-grid"><span><b>Instagram</b><strong>4.520</strong></span><span><b>Facebook</b><strong>≈4.203</strong></span><span><b>TikTok</b><strong>897</strong></span><span><b>Threads</b><strong>123</strong></span><span><b>YouTube antigo</b><strong>7</strong></span><span class="total"><b>Soma aproximada</b><strong>≈9.750</strong></span></div><p class="source-note">A soma não representa pessoas únicas. O canal antigo do YouTube ainda não foi confirmado como canal atual da campanha.</p></details>
+      </section>
 
       <section class="monitor-guidance" aria-labelledby="monitor-guidance-title">
         <div class="section-title monitor-section-title">
@@ -326,6 +286,7 @@
               <li>Explique o que um deputado estadual pode fazer e informe o próximo passo.</li>
               <li>Se houver caso pessoal, convide para o canal oficial; não peça dados pessoais em público.</li>
             </ul>
+            <p class="source-note"><a href="https://www.cdc.gov/cerc/php/cerc-manual/index.html" target="_blank" rel="noopener noreferrer">Fonte: princípios de comunicação de crise do CDC</a>. Adaptação para comunicação pública factual.</p>
           </article>
           <article class="card monitor-guidance-card engagement">
             <p class="eyebrow">Marketing político</p>
@@ -335,6 +296,7 @@
               <li>Organize realizações em três etapas: pedido, aprovação e entrega, sempre com link oficial.</li>
               <li>Use vídeos curtos, legendados e com uma fonte fácil de conferir na tela.</li>
             </ul>
+            <p class="source-note"><a href="https://www.climatechangecommunication.org/debunking-handbook-2020/" target="_blank" rel="noopener noreferrer">Fonte: The Debunking Handbook 2020</a>. Corrigir apenas afirmações que tenham verificação suficiente.</p>
           </article>
           <article class="card monitor-guidance-card content">
             <p class="eyebrow">Ideias de conteúdo</p>
@@ -349,6 +311,8 @@
         </div>
       </section>
 
+      <details class="card monitor-archive">
+        <summary><span><span class="eyebrow">Consulta completa</span><strong>Ver publicações, termômetro e metodologia</strong></span></summary>
       <div class="section-title monitor-section-title">
         <div><p class="eyebrow">Clipping</p><h2>Publicações confirmadas</h2></div>
       </div>
@@ -429,6 +393,7 @@
           <div><dt>Total histórico acumulado</dt><dd>NÃO VERIFICÁVEL: fotografias sucessivas do mesmo post não foram somadas</dd></div>
           <div><dt>Pendências preservadas</dt><dd>TikTok com datas relativas; Facebook e Instagram com diferenças entre contador e textos carregados; descoberta externa parcial</dd></div>
         </dl>
+      </details>
       </details>
 
       <div class="section-title monitor-section-title">

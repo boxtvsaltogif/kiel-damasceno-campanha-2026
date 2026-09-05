@@ -250,6 +250,9 @@ function renderTerritory(){
 }
 let monitorDate='all';
 let monitorMetric='curtidas';
+let monitorStartDate='2026-08-12';
+let monitorEndDate='2026-09-02';
+let monitorNetwork='all';
 let monitorDataCache=null;
 const monitorNetworkNames={instagram:'Instagram',facebook:'Facebook',threads:'Threads',tiktok:'TikTok',youtube:'YouTube',x:'X'};
 const monitorMetricConfig={
@@ -267,7 +270,11 @@ function monitoringData(){
   try{monitorDataCache=JSON.parse(node.textContent);return monitorDataCache}catch(error){console.error('Dados de monitoramento inválidos.',error);return null}
 }
 function monitorNumber(value){return Number.isFinite(value)?Number(value).toLocaleString('pt-BR'):'Não verificável'}
-function selectedMonitorRecords(data){return monitorDate==='all'?data.historico:data.historico.filter(item=>item.data===monitorDate)}
+function monitorRangeRecords(data){return data.historico.filter(item=>item.data>=monitorStartDate&&item.data<=monitorEndDate)}
+function selectedMonitorRecords(data){const records=monitorRangeRecords(data);return monitorDate==='all'?records:records.filter(item=>item.data===monitorDate)}
+function monitorUrlNetwork(url=''){const value=String(url).toLowerCase();if(value.includes('instagram.com'))return 'instagram';if(value.includes('facebook.com'))return 'facebook';if(value.includes('tiktok.com'))return 'tiktok';if(value.includes('youtube.com')||value.includes('youtu.be'))return 'youtube';if(value.includes('threads.'))return 'threads';if(value.includes('x.com')||value.includes('twitter.com'))return 'x';return 'web'}
+function monitorRecordSources(record){return (record.fontes||[]).filter(source=>monitorNetwork==='all'||monitorUrlNetwork(source.url)===monitorNetwork)}
+function monitorFilteredComments(records){return records.flatMap(item=>(item.comentarios||[]).map(comment=>({data:item.rotulo,...comment}))).filter(comment=>monitorNetwork==='all'||monitorUrlNetwork(comment.url)===monitorNetwork)}
 function aggregateNetwork(records,key){
   const pieces=records.map(item=>item.redes?.[key]).filter(Boolean);
   const sum=metric=>{const values=pieces.map(item=>item[metric]).filter(Number.isFinite);return values.length?values.reduce((total,value)=>total+value,0):null};
@@ -280,19 +287,29 @@ function aggregateNetwork(records,key){
     favoritos:sum('favoritos'),curtidas_comentarios:sum('curtidas_comentarios'),visualizacoes:sum('visualizacoes')
   };
 }
-function renderMonitorMetricFilters(){
-  const target=document.querySelector('#monitor-metric-filter');
+function renderMonitorKpis(data){
+  const target=document.querySelector('#monitor-kpi-cards');
   if(!target)return;
-  target.innerHTML=Object.entries(monitorMetricConfig).map(([key,item])=>`<button type="button" class="scope-button ${monitorMetric===key?'active':''}" data-monitor-metric="${key}" aria-pressed="${monitorMetric===key}">${esc(item.short)}</button>`).join('');
+  const records=monitorRangeRecords(data);
+  const cards=['curtidas','comentarios','repostagens','visualizacoes_total','comentarios_negativos'];
+  const values=cards.map(key=>{const available=records.map(record=>monitorDailyMetric(record,key)).filter(Number.isFinite);return {key,value:available.length?available.reduce((sum,value)=>sum+value,0):null}});
+  target.innerHTML=values.map(({key,value})=>{const config=monitorMetricConfig[key];return `<button type="button" class="monitor-kpi ${monitorMetric===key?'active':''}" data-monitor-metric="${key}" aria-pressed="${monitorMetric===key}"><span>${esc(config.short)}</span><strong>${Number.isFinite(value)?`${config.minimum?'≥':''}${value.toLocaleString('pt-BR')}`:'Não verificável'}</strong><small>Soma das fotografias no período</small></button>`}).join('');
 }
-function renderMonitorFilters(data){
-  const target=document.querySelector('#monitor-date-filter');
-  if(!target)return;
-  const buttons=[{data:'all',rotulo:'Todos'},...data.historico.map(item=>({data:item.data,rotulo:item.rotulo}))];
-  target.innerHTML=buttons.map(item=>`<button type="button" class="scope-button ${monitorDate===item.data?'active':''}" data-monitor-date="${item.data}" aria-pressed="${monitorDate===item.data}">${esc(item.rotulo)}</button>`).join('');
+function renderMonitorFilterSummary(data){
+  const summary=document.querySelector('#monitor-filter-summary');
+  const networkLabel=monitorNetwork==='all'?'todas as redes':monitorNetworkNames[monitorNetwork];
+  if(summary)summary.textContent=`Período selecionado: ${monitorStartDate.split('-').reverse().slice(0,2).join('/')} a ${monitorEndDate.split('-').reverse().join('/')} · ${monitorRangeRecords(data).length} datas de coleta · ${networkLabel} · fuso de Brasília`;
+  const chartNetwork=document.querySelector('#monitor-chart-network');
+  if(chartNetwork)chartNetwork.textContent=monitorNetwork==='all'?'Todas as redes':monitorNetworkNames[monitorNetwork];
 }
 function monitorDailyMetric(record,key){
   if(record.status!=='verificado')return null;
+  if(monitorNetwork!=='all'){
+    const network=record.redes?.[monitorNetwork];
+    if(!network)return null;
+    const map={curtidas:'curtidas',comentarios_negativos:'desfavoraveis',comentarios:'comentarios_exibidos',repostagens:'repostagens',visualizacoes_redes:'visualizacoes',visualizacoes_total:'visualizacoes'};
+    return Number.isFinite(network[map[key]])?network[map[key]]:null;
+  }
   if(key==='visualizacoes_redes')return Number.isFinite(record.visualizacoes_redes_proprias)?record.visualizacoes_redes_proprias:null;
   if(key==='visualizacoes_total')return Number.isFinite(record.visualizacoes_verificadas)?record.visualizacoes_verificadas:null;
   const stats=monitorDetailStats([record]);
@@ -303,8 +320,9 @@ function renderMonitorLineChart(data){
   const target=document.querySelector('#monitor-line-chart');
   if(!target)return;
   const compact=window.matchMedia('(max-width: 620px)').matches;
-  const width=Math.max(compact?980:1060,data.historico.length*82),height=compact?350:400,left=compact?72:86,right=compact?28:42,top=compact?48:52,bottom=compact?68:76;
-  const chartHistory=data.historico;
+  const chartHistory=monitorRangeRecords(data);
+  target.style.minWidth=compact&&chartHistory.length>8?`${Math.max(760,chartHistory.length*76)}px`:'0';
+  const width=Math.max(compact?760:980,chartHistory.length*76),height=compact?330:350,left=compact?72:86,right=compact?28:42,top=compact?48:52,bottom=compact?68:76;
   const config=monitorMetricConfig[monitorMetric];
   const values=chartHistory.map(item=>monitorDailyMetric(item,monitorMetric));
   const maxValue=Math.max(1,...values.filter(Number.isFinite));
@@ -322,9 +340,11 @@ function renderMonitorLineChart(data){
   const grid=[...new Set(tickValues)].map(value=>`<g><line x1="${left}" x2="${width-right}" y1="${yAt(value)}" y2="${yAt(value)}" class="monitor-grid-line ${value===0?'zero':''}"/><text x="${left-16}" y="${yAt(value)+5}" text-anchor="end" class="monitor-axis-label">${Number(value).toLocaleString('pt-BR')}</text></g>`).join('');
   const points=chartHistory.map((item,index)=>{
     const x=xAt(index),value=values[index],available=Number.isFinite(value),selected=monitorDate==='all'||monitorDate===item.data;
-    if(!available)return `<g data-monitor-date="${item.data}" role="button" tabindex="0" aria-label="${esc(item.rotulo)}: ${esc(config.label)} não verificável" class="monitor-svg-point ${selected?'selected':''}"><circle cx="${x}" cy="${height-bottom}" r="9" class="unavailable"/><text x="${x}" y="${height-bottom-17}" text-anchor="middle" class="monitor-nv-label">NV</text><text x="${x}" y="${height-34}" text-anchor="middle" class="monitor-date-label">${esc(item.rotulo)}</text></g>`;
+    const sources=monitorRecordSources(item);const sourceText=sources.length?sources.map(source=>`${source.label} · ${monitorNetworkNames[monitorUrlNetwork(source.url)]||'Site'}`).join(' | '):item.titulo;
+    const tip=`${item.rotulo} · ${config.label}: ${available?`${config.minimum?'≥':''}${Number(value).toLocaleString('pt-BR')}`:'não verificável'} · ${sourceText}`;
+    if(!available)return `<g data-monitor-date="${item.data}" data-monitor-tip="${esc(tip)}" role="button" tabindex="0" aria-label="${esc(item.rotulo)}: ${esc(config.label)} não verificável" class="monitor-svg-point ${selected?'selected':''}"><title>${esc(tip)}</title><circle cx="${x}" cy="${height-bottom}" r="9" class="unavailable"/><text x="${x}" y="${height-bottom-17}" text-anchor="middle" class="monitor-nv-label">NV</text><text x="${x}" y="${height-34}" text-anchor="middle" class="monitor-date-label">${esc(item.rotulo)}</text></g>`;
     const y=yAt(value),shown=`${config.minimum?'≥':''}${Number(value).toLocaleString('pt-BR')}`;
-    return `<g data-monitor-date="${item.data}" role="button" tabindex="0" aria-label="${esc(item.rotulo)}: ${esc(config.label)} ${shown}" class="monitor-svg-point ${selected?'selected':''}"><circle cx="${x}" cy="${y}" r="8" class="metric ${config.tone||''}"/><text x="${x}" y="${Math.max(24,y-15)}" text-anchor="middle" class="monitor-point-value metric ${config.tone||''}">${shown}</text><text x="${x}" y="${height-34}" text-anchor="middle" class="monitor-date-label">${esc(item.rotulo)}</text></g>`;
+    return `<g data-monitor-date="${item.data}" data-monitor-tip="${esc(tip)}" role="button" tabindex="0" aria-label="${esc(item.rotulo)}: ${esc(config.label)} ${shown}" class="monitor-svg-point ${selected?'selected':''}"><title>${esc(tip)}</title><circle cx="${x}" cy="${y}" r="8" class="metric ${config.tone||''}"/><text x="${x}" y="${Math.max(24,y-15)}" text-anchor="middle" class="monitor-point-value metric ${config.tone||''}">${shown}</text><text x="${x}" y="${height-34}" text-anchor="middle" class="monitor-date-label">${esc(item.rotulo)}</text></g>`;
   }).join('');
   target.innerHTML=`<svg viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="monitor-chart-title monitor-chart-desc" preserveAspectRatio="xMidYMid meet"><title id="monitor-chart-title">${esc(config.label)} por data</title><desc id="monitor-chart-desc">Linha com todos os dias monitorados. Cada ponto pode ser selecionado para abrir o detalhe da data.</desc>${grid}<text x="${left}" y="25" class="monitor-axis-title">${esc(config.label.toLowerCase())}</text>${path?`<path d="${path}" class="monitor-line metric ${config.tone||''}"/>`:''}${points}</svg>`;
   const summary=document.querySelector('#monitor-chart-summary');
@@ -333,7 +353,7 @@ function renderMonitorLineChart(data){
     const value=selected?monitorDailyMetric(selected,monitorMetric):null;
     summary.innerHTML=selected
       ?`<strong>${esc(config.label)}</strong><span>${Number.isFinite(value)?`${config.minimum?'≥ ':''}${Number(value).toLocaleString('pt-BR')} em ${esc(selected.rotulo)}`:`Não verificável em ${esc(selected.rotulo)}`}</span>`
-      :`<strong>${esc(config.label)}</strong><span>Total acumulado: não verificável · linha compara as fotografias de cada data</span>`;
+      :`<strong>${esc(config.label)}</strong><span>Linha compara ${chartHistory.length} fotografias · crescimento acumulado não verificável</span>`;
   }
 }
 function monitorDetailStats(records){
@@ -355,21 +375,20 @@ function renderMonitorDayDetail(data){
   const target=document.querySelector('#monitor-day-detail');
   if(!target)return;
   const records=selectedMonitorRecords(data),single=records.length===1?records[0]:null;
-  const stats=monitorDate==='all'&&data.ultimo_periodo?.redes?monitorDetailStats([{redes:data.ultimo_periodo.redes}]):monitorDetailStats(records);
-  const comments=records.flatMap(item=>(item.comentarios||[]).map(comment=>({data:item.rotulo,...comment})));
-  const title=single?`${single.rotulo} · ${single.titulo}`:'Histórico completo e fotografia mais recente';
-  const summary=single?single.resumo:`O histórico reúne ${data.historico.length} datas entre 12/08 e 02/09. Há ${comments.length} textos relevantes salvos neste painel. O total acumulado de curtidas, comentários, compartilhamentos e visualizações permanece não verificável porque várias publicações foram revisitadas em horários diferentes.`;
-  const statusText=single?(single.status==='verificado'?'Dados confirmados':single.status==='sem_item_localizado'?'Busca realizada · sem novo item localizado':'Não verificável'):'Cobertura consolidada';
+  const stats=monitorDetailStats(records.map(record=>monitorNetwork==='all'?record:{...record,redes:{[monitorNetwork]:record.redes?.[monitorNetwork]}}));
+  const comments=monitorFilteredComments(records);
+  const title=single?`${single.rotulo} · ${single.titulo}`:`Comentários de ${monitorStartDate.split('-').reverse().slice(0,2).join('/')} a ${monitorEndDate.split('-').reverse().join('/')}`;
+  const summary=single?single.resumo:`A seleção reúne ${records.length} datas e ${comments.length} textos relevantes salvos. As métricas são fotografias dos contadores e não formam um crescimento histórico confiável.`;
+  const statusText=single?(single.status==='verificado'?'Dados confirmados':single.status==='sem_item_localizado'?'Busca realizada · sem novo item localizado':'Não verificável'):`${monitorNetwork==='all'?'Todas as redes':monitorNetworkNames[monitorNetwork]}`;
   const statItems=[['Curtidas e reações',stats.curtidas],['Comentários exibidos',stats.comentarios_exibidos],['Textos abertos',stats.comentarios_revisados],['Favoráveis',stats.favoraveis],['Neutros ou mistos',stats.neutros],['Desfavoráveis',stats.desfavoraveis],['Recompartilhamentos',stats.repostagens],['Favoritos',stats.favoritos],['Visualizações exibidas',stats.visualizacoes]];
   const commentType=comment=>{const value=String(comment.valencia||'').toLowerCase();return value.startsWith('favor')?'positive':value.startsWith('desfavor')?'negative':'neutral'};
-  const commentCard=comment=>`<li><blockquote>“${esc(comment.texto)}”</blockquote><span>${esc(comment.data)} · ${esc(comment.valencia)} · Curtidas: ${Number.isFinite(comment.curtidas)?comment.curtidas:'não exibidas'}</span>${comment.url?`<a href="${esc(comment.url)}" target="_blank" rel="noopener noreferrer">Abrir origem</a>`:''}</li>`;
+  const commentCard=comment=>`<li><blockquote>“${esc(comment.texto)}”</blockquote><span>${esc(comment.data)} · ${esc(monitorNetworkNames[monitorUrlNetwork(comment.url)]||'Fonte externa')} · ${esc(comment.valencia)} · Curtidas: ${Number.isFinite(comment.curtidas)?comment.curtidas:'não exibidas'}</span>${comment.url?`<a href="${esc(comment.url)}" target="_blank" rel="noopener noreferrer">Abrir comentário ou publicação</a>`:''}</li>`;
   const positives=comments.filter(comment=>commentType(comment)==='positive');
   const negatives=comments.filter(comment=>commentType(comment)==='negative');
   const neutrals=comments.filter(comment=>commentType(comment)==='neutral');
-  const negativeOnly=monitorMetric==='comentarios_negativos';
-  const commentHtml=comments.length?`<details class="monitor-comment-details" ${single||negativeOnly?'open':''}><summary>${negativeOnly?`Ver comentários negativos com texto salvo (${negatives.length})`:`Ver todos os ${comments.length} comentários relevantes com texto salvo`}</summary>${negativeOnly?`<section class="monitor-comment-single negative"><h3>Comentários negativos (${negatives.length})</h3>${negatives.length?`<ol>${negatives.map(commentCard).join('')}</ol>`:'<p class="monitor-no-comments">Nenhum comentário negativo com texto salvo nesta seleção.</p>'}</section>`:`<div class="monitor-comment-board"><section class="monitor-comment-column positive"><h3>Comentários positivos (${positives.length})</h3>${positives.length?`<ol>${positives.map(commentCard).join('')}</ol>`:'<p class="monitor-no-comments">Nenhum comentário positivo com texto salvo nesta seleção.</p>'}</section><section class="monitor-comment-column negative"><h3>Comentários negativos (${negatives.length})</h3>${negatives.length?`<ol>${negatives.map(commentCard).join('')}</ol>`:'<p class="monitor-no-comments">Nenhum comentário negativo com texto salvo nesta seleção.</p>'}</section></div>${neutrals.length?`<section class="monitor-comment-neutral"><h3>Neutros, relatos ou pendentes (${neutrals.length})</h3><ol>${neutrals.map(commentCard).join('')}</ol></section>`:''}`}</details>`:'<p class="monitor-no-comments">Nenhum texto de comentário foi salvo nesta data. Isso não deve ser interpretado como zero repercussão.</p>';
-  const statsNote=monitorDate==='all'?'Os indicadores acima pertencem à última janela fechada, 01–02/09, e não são uma soma do histórico. A área abaixo reúne os textos relevantes salvos em todas as datas.':'Os indicadores acima pertencem à data selecionada. A área abaixo mostra os comentários relevantes cujo texto foi salvo.';
-  target.innerHTML=`<div class="monitor-detail-heading"><div><p class="eyebrow">Detalhe selecionado</p><h2>${esc(title)}</h2></div><span class="monitor-status ${single?.status==='verificado'?'':'unavailable'}">${esc(statusText)}</span></div><p>${esc(summary)}</p><div class="monitor-detail-stats">${statItems.map(([label,value])=>`<div><span>${esc(label)}</span><strong>${monitorNumber(value)}</strong></div>`).join('')}</div><p class="source-note">${esc(statsNote)} Cada comentário mantém um link direto para conferência.</p>${commentHtml}`;
+  const commentHtml=comments.length?`<div class="monitor-comment-board"><details class="monitor-comment-column positive"><summary><span>${positives.length}</span><strong>Ver comentários positivos</strong><small>Apoio, elogios e aprovação com texto salvo</small></summary>${positives.length?`<ol>${positives.map(commentCard).join('')}</ol>`:'<p class="monitor-no-comments">Nenhum comentário positivo com texto salvo nesta seleção.</p>'}</details><details class="monitor-comment-column negative" ${monitorMetric==='comentarios_negativos'?'open':''}><summary><span>${negatives.length}</span><strong>Ver críticas e comentários negativos</strong><small>Insatisfação, cobrança e ataque com texto salvo</small></summary>${negatives.length?`<ol>${negatives.map(commentCard).join('')}</ol>`:'<p class="monitor-no-comments">Nenhum comentário negativo com texto salvo nesta seleção.</p>'}</details></div>${neutrals.length?`<details class="monitor-comment-neutral"><summary>Ver dúvidas, neutros e outros (${neutrals.length})</summary><ol>${neutrals.map(commentCard).join('')}</ol></details>`:''}`:'<p class="monitor-no-comments">Nenhum texto de comentário foi salvo nesta seleção. Isso não deve ser interpretado como zero repercussão.</p>';
+  const sources=records.flatMap(record=>monitorRecordSources(record).map(source=>({...source,data:record.rotulo})));const sourceHtml=sources.length?`<details class="monitor-source-details"><summary>Ver publicações e fontes desta seleção (${sources.length})</summary><div class="monitor-detail-links">${sources.map(source=>`<a href="${esc(source.url)}" target="_blank" rel="noopener noreferrer">${esc(source.data)} · ${esc(source.label)}</a>`).join('')}</div><p class="source-note">A base atual não registra o contador individual de todas as publicações. Quando isso ocorrer, a fonte aparece como parte do total do dia, sem atribuir a ela um valor inventado.</p></details>`:'';
+  target.innerHTML=`<div class="monitor-detail-heading"><div><p class="eyebrow">Abra e leia os comentários</p><h2>${esc(title)}</h2></div><span class="monitor-status ${single?.status==='verificado'?'':'unavailable'}">${esc(statusText)}</span></div><p>${esc(summary)}</p><div class="monitor-detail-stats">${statItems.map(([label,value])=>`<div><span>${esc(label)}</span><strong>${monitorNumber(value)}</strong></div>`).join('')}</div><p class="source-note">Os valores acima pertencem à seleção atual. Cada comentário mantém um caminho de conferência.</p>${commentHtml}${sourceHtml}`;
 }
 function verifiedDailyInteractions(record){
   if(record.status!=='verificado')return null;
@@ -426,8 +445,9 @@ function monitorNetworkIcon(key){
 function renderMonitorNetworkChart(data){
   const target=document.querySelector('#monitor-network-chart');
   if(!target)return;
-  const records=selectedMonitorRecords(data);
-  const rows=Object.keys(monitorNetworkNames).map(key=>({key,name:monitorNetworkNames[key],data:monitorDate==='all'&&data.ultimo_periodo?.redes?.[key]?data.ultimo_periodo.redes[key]:aggregateNetwork(records,key)}));
+  const records=monitorRangeRecords(data);
+  const keys=monitorNetwork==='all'?Object.keys(monitorNetworkNames):[monitorNetwork];
+  const rows=keys.map(key=>({key,name:monitorNetworkNames[key],data:aggregateNetwork(records,key)}));
   const categories=[['curtidas','likes','Curtidas'],['comentarios_exibidos','comments','Comentários'],['repostagens','reposts','Repostagens'],['favoritos','favorites','Favoritos']];
   const detailCategories=[...categories.slice(0,2),['favoraveis','positive','Favoráveis'],['neutros','neutral','Neutros'],['desfavoraveis','negative','Desfavoráveis'],['nao_classificados','unclassified','Não classificados'],...categories.slice(2)];
   const totals=rows.map(row=>categories.reduce((total,[key])=>total+(Number.isFinite(row.data[key])?row.data[key]:0),0));
@@ -436,15 +456,15 @@ function renderMonitorNetworkChart(data){
     const total=totals[index],hasAny=categories.some(([key])=>Number.isFinite(row.data[key])&&row.data[key]>0);
     const segments=categories.map(([key,className,label])=>Number.isFinite(row.data[key])&&row.data[key]>0?`<span class="${className}" style="width:${(row.data[key]/maxTotal*100).toFixed(3)}%" title="${label}: ${row.data[key]}"></span>`:'').join('');
     const metrics=detailCategories.map(([key,,label])=>`<span><b>${esc(label)}:</b> ${monitorNumber(row.data[key])}</span>`).join('');
-    const extras=`${monitorDate==='all'?'Última janela fechada (01–02/09)':'Data selecionada'} · Publicações monitoradas: ${monitorNumber(row.data.publicacoes)} · Comentários exibidos: ${monitorNumber(row.data.comentarios_exibidos)} · Revisados: ${monitorNumber(row.data.comentarios_revisados)} · Visualizações: ${monitorNumber(row.data.visualizacoes)}`;
-    return `<section class="monitor-network-row" aria-label="${esc(row.name)}"><span class="monitor-network-icon ${row.key}" aria-hidden="true">${monitorNetworkIcon(row.key)}</span><div class="monitor-network-body"><div class="monitor-network-heading"><h3>${esc(row.name)}</h3><strong>${hasAny?total.toLocaleString('pt-BR')+' interações contáveis':'Aguardando métrica verificável'}</strong></div><div class="monitor-network-track" role="img" aria-label="${esc(row.name)}: ${esc(extras)}">${segments||'<span class="empty">Sem número comparável</span>'}</div><div class="monitor-network-metrics">${metrics}</div><p class="source-note">${esc(extras)}${Number.isFinite(row.data.curtidas_comentarios)?` · Curtidas nos comentários: ${row.data.curtidas_comentarios}`:''}</p></div></section>`;
+    const extras=`Período selecionado · Publicações monitoradas: ${monitorNumber(row.data.publicacoes)} · Comentários exibidos: ${monitorNumber(row.data.comentarios_exibidos)} · Revisados: ${monitorNumber(row.data.comentarios_revisados)} · Visualizações: ${monitorNumber(row.data.visualizacoes)}`;
+    return `<button type="button" class="monitor-network-row ${monitorNetwork===row.key?'selected':''}" data-monitor-network="${row.key}" aria-label="Filtrar painel por ${esc(row.name)}"><span class="monitor-network-icon ${row.key}" aria-hidden="true">${monitorNetworkIcon(row.key)}</span><span class="monitor-network-body"><span class="monitor-network-heading"><strong class="network-name">${esc(row.name)}</strong><b>${hasAny?total.toLocaleString('pt-BR')+' interações contáveis':'Aguardando métrica verificável'}</b></span><span class="monitor-network-track" role="img" aria-label="${esc(row.name)}: ${esc(extras)}">${segments||'<span class="empty">Sem número comparável</span>'}</span><span class="monitor-network-metrics">${metrics}</span><span class="source-note">${esc(extras)}${Number.isFinite(row.data.curtidas_comentarios)?` · Curtidas nos comentários: ${row.data.curtidas_comentarios}`:''}</span></span></button>`;
   }).join('');
 }
 function renderMonitoring(){
   const data=monitoringData();
   if(!data||!Array.isArray(data.historico))return;
-  renderMonitorMetricFilters();
-  renderMonitorFilters(data);
+  renderMonitorKpis(data);
+  renderMonitorFilterSummary(data);
   renderMonitorLineChart(data);
   renderMonitorDayDetail(data);
   renderMonitorNetworkChart(data);
@@ -465,6 +485,11 @@ document.addEventListener('click',async e=>{
   if(monitorFilter){monitorDate=monitorFilter.dataset.monitorDate;renderMonitoring();return}
   const monitorMetricButton=e.target.closest('[data-monitor-metric]');
   if(monitorMetricButton){monitorMetric=monitorMetricButton.dataset.monitorMetric;renderMonitoring();return}
+  const monitorNetworkButton=e.target.closest('[data-monitor-network]');
+  if(monitorNetworkButton){monitorNetwork=monitorNetworkButton.dataset.monitorNetwork;const select=document.querySelector('#monitor-network-filter');if(select)select.value=monitorNetwork;monitorDate='all';renderMonitoring();return}
+  const monitorRangeButton=e.target.closest('[data-monitor-range]');
+  if(monitorRangeButton){const data=monitoringData(),first=data.historico[0].data,last=data.historico.at(-1).data;monitorStartDate=monitorRangeButton.dataset.monitorRange==='latest'?data.ultimo_periodo.inicio.slice(0,10):monitorRangeButton.dataset.monitorRange==='day'?last:first;monitorEndDate=monitorRangeButton.dataset.monitorRange==='latest'?data.ultimo_periodo.fim.slice(0,10):last;monitorDate='all';document.querySelector('#monitor-start-date').value=monitorStartDate;document.querySelector('#monitor-end-date').value=monitorEndDate;renderMonitoring();return}
+  if(e.target.id==='monitor-apply-range'){const start=document.querySelector('#monitor-start-date').value,end=document.querySelector('#monitor-end-date').value;if(!start||!end||start>end){toast('Escolha uma data inicial igual ou anterior à data final.');return}monitorStartDate=start;monitorEndDate=end;monitorNetwork=document.querySelector('#monitor-network-filter').value;monitorDate='all';renderMonitoring();return}
   const help=e.target.closest('[data-help-button]');
   if(help){const box=help.parentElement.querySelector('.question-help'),open=!box.classList.contains('open');document.querySelectorAll('.question-help.open').forEach(item=>item.classList.remove('open'));document.querySelectorAll('[data-help-button][aria-expanded="true"]').forEach(item=>item.setAttribute('aria-expanded','false'));box.classList.toggle('open',open);help.setAttribute('aria-expanded',String(open));return}
   const scope=e.target.closest('[data-demography-scope]');
@@ -487,7 +512,12 @@ document.addEventListener('click',async e=>{
 
 document.addEventListener('keydown',e=>{const point=e.target.closest?.('.monitor-svg-point[data-monitor-date]');if(point&&(e.key==='Enter'||e.key===' ')){e.preventDefault();monitorDate=point.dataset.monitorDate;renderMonitoring()}});
 
-document.addEventListener('change',async e=>{if(e.target.matches('[data-task]')){if(!window.campaignBackend.canWrite()){e.target.checked=!e.target.checked;toast('Seu acesso permite somente leitura.');return}state.tasks[e.target.dataset.task]=e.target.checked;log(e.target.checked?'Concluiu tarefa':'Reabriu tarefa',phases[activePhase].title);await save();renderNav();renderPhase();updateProgress()}});
+document.addEventListener('pointerover',e=>{const point=e.target.closest?.('.monitor-svg-point[data-monitor-tip]'),tip=document.querySelector('#monitor-point-tooltip');if(point&&tip){tip.textContent=point.dataset.monitorTip;tip.hidden=false}});
+document.addEventListener('pointerout',e=>{const point=e.target.closest?.('.monitor-svg-point[data-monitor-tip]'),tip=document.querySelector('#monitor-point-tooltip');if(point&&tip)tip.hidden=true});
+document.addEventListener('focusin',e=>{const point=e.target.closest?.('.monitor-svg-point[data-monitor-tip]'),tip=document.querySelector('#monitor-point-tooltip');if(point&&tip){tip.textContent=point.dataset.monitorTip;tip.hidden=false}});
+document.addEventListener('focusout',e=>{const point=e.target.closest?.('.monitor-svg-point[data-monitor-tip]'),tip=document.querySelector('#monitor-point-tooltip');if(point&&tip)tip.hidden=true});
+
+document.addEventListener('change',async e=>{if(e.target.id==='monitor-network-filter'){monitorNetwork=e.target.value;monitorDate='all';renderMonitoring();return}if(e.target.matches('[data-task]')){if(!window.campaignBackend.canWrite()){e.target.checked=!e.target.checked;toast('Seu acesso permite somente leitura.');return}state.tasks[e.target.dataset.task]=e.target.checked;log(e.target.checked?'Concluiu tarefa':'Reabriu tarefa',phases[activePhase].title);await save();renderNav();renderPhase();updateProgress()}});
 document.addEventListener('input',e=>{if(e.target.matches('[data-answer]')&&window.campaignBackend.canWrite())state.answers[e.target.dataset.answer]=e.target.value});
 document.querySelector('.menu-button').addEventListener('click',e=>{const open=document.querySelector('#main-nav').classList.toggle('open');e.currentTarget.setAttribute('aria-expanded',String(open))});
 
