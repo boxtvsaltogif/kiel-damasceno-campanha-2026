@@ -251,7 +251,7 @@ function renderTerritory(){
 let monitorDate='all';
 let monitorMetric='curtidas';
 let monitorStartDate='2026-08-12';
-let monitorEndDate='2026-09-02';
+let monitorEndDate='2026-09-06';
 let monitorNetwork='all';
 let monitorDataCache=null;
 const monitorNetworkNames={instagram:'Instagram',facebook:'Facebook',threads:'Threads',tiktok:'TikTok',youtube:'YouTube',x:'X'};
@@ -261,7 +261,7 @@ const monitorMetricConfig={
   comentarios:{label:'Comentários exibidos nos posts da data',short:'Todos os comentários',minimum:false},
   repostagens:{label:'Repostagens exibidas nos posts da data',short:'Repostagens',minimum:true},
   visualizacoes_redes:{label:'Visualizações nas redes próprias',short:'Visualizações R. sociais',minimum:true},
-  visualizacoes_total:{label:'Visualizações nas redes e fontes externas',short:'Visualizações redes + externo',minimum:true}
+  visualizacoes_total:{label:'Visualizações verificadas nas fontes monitoradas',short:'Visualizações verificadas',minimum:true}
 };
 function monitoringData(){
   if(monitorDataCache)return monitorDataCache;
