@@ -11,6 +11,7 @@
   <link rel="canonical" href="https://boxtvsaltogif.github.io/kiel-damasceno-campanha-2026/">
   <link rel="icon" href="logo-kiel-oficial.png" type="image/png">
   <link rel="stylesheet" href="styles.css?v=10">
+  <link rel="stylesheet" href="atuacao.css?v=1">
 </head>
 <body>
   <section id="login-screen" class="auth-screen" aria-labelledby="login-title">
@@ -43,7 +44,8 @@
       <a href="#base" data-view="base">Demografia</a>
       <a href="#alcance" data-view="alcance">Alcance</a>
       <a href="#monitoramento" data-view="monitoramento">Monitoramento</a>
-      <a href="#leis" data-view="leis">Leis</a>
+      <a href="#atuacao" data-view="atuacao">Atuação</a>
+      <a href="#leis" data-view="leis">Regras 2026</a>
       <a href="#auditoria" data-view="auditoria">Auditoria</a>
       <a href="#configuracoes" data-view="configuracoes">Configurações</a>
     </nav>
@@ -417,6 +419,42 @@
         <li class="card"><h2>Preparar comprovação das afirmações biográficas</h2><p>“Três mandatos” e “12 anos de trabalho por Salto” devem estar acompanhados de documentação para entrevistas e imprensa.</p><div class="monitor-links"><a href="https://www.instagram.com/kieldamasceno/p/DcHFF6DNiCK/" target="_blank" rel="noopener noreferrer">Conferir três mandatos</a><a href="https://www.instagram.com/kieldamasceno/" target="_blank" rel="noopener noreferrer">Conferir o perfil</a></div></li>
         <li class="card"><h2>Organizar resposta à promessa de atendimento pessoal</h2><p>“Quem vai te atender sou eu” cria expectativa elevada. Definir triagem, prazo e canal de retorno ajuda a evitar frustração.</p><a href="https://www.instagram.com/kieldamasceno/reel/DcI97T2tZdc/" target="_blank" rel="noopener noreferrer">Conferir promessa no Reel</a></li>
       </ol>
+    </section>
+
+    <section id="atuacao" class="view atuacao-view" aria-labelledby="atuacao-title" hidden>
+      <div class="page-heading atuacao-heading">
+        <p class="eyebrow">Transparência da atuação pública</p>
+        <h1 id="atuacao-title">Atuação e recursos</h1>
+        <p>Consulte leis, projetos e recursos atribuídos a Kiel por área, ano, situação e nível de comprovação.</p>
+        <div class="atuacao-meta" aria-label="Cobertura da auditoria"><span>Leis: 2013–2024</span><span>Recursos oficiais: 2022–1º trimestre de 2025</span><span>Base atualizada em setembro de 2026</span></div>
+      </div>
+      <nav class="atuacao-mode-nav" aria-label="Escolha o tipo de informação">
+        <button class="atuacao-mode-button resources active" type="button" data-atuacao-mode="recursos" aria-pressed="true"><span class="atuacao-mode-icon" aria-hidden="true">R$</span><span><strong>Recursos e emendas</strong><small>Valores, destinos, anos, comprovação e execução</small></span><span class="atuacao-mode-arrow" aria-hidden="true">→</span></button>
+        <button class="atuacao-mode-button legislation" type="button" data-atuacao-mode="legislacao" aria-pressed="false"><span class="atuacao-mode-icon" aria-hidden="true">§</span><span><strong>Leis e projetos</strong><small>Leis vigentes, revogadas, projetos retirados e arquivados</small></span><span class="atuacao-mode-arrow" aria-hidden="true">→</span></button>
+      </nav>
+      <div id="atuacao-recursos-panel" class="atuacao-panel">
+        <section class="atuacao-filter-card" aria-labelledby="recursos-filtros-title">
+          <div class="atuacao-filter-heading"><div><p class="eyebrow">Filtros combinados</p><h2 id="recursos-filtros-title">Escolha o que deseja consultar</h2></div><button id="recursos-limpar" class="text-button" type="button">Limpar filtros</button></div>
+          <div class="proof-toggle" role="group" aria-label="Nível de comprovação dos recursos">
+            <button class="proof-button official active" type="button" data-proof="Oficial" aria-pressed="true"><span>✓</span><strong>Verba oficial</strong><small>Com documento público</small></button>
+            <button class="proof-button informal active" type="button" data-proof="Informal" aria-pressed="true"><span>✓</span><strong>Verba informal</strong><small>Sem comprovação financeira direta</small></button>
+          </div>
+          <p class="filter-guidance">Os dois botões podem ficar ativos ao mesmo tempo. Desative um deles para comparar somente o outro tipo.</p>
+          <div class="atuacao-filters"><label>Área<select id="recurso-categoria"><option value="">Todas as áreas</option></select></label><label>Ano<select id="recurso-ano"><option value="">Todos os anos</option></select></label><label>Execução<select id="recurso-execucao"><option value="">Todas as situações</option></select></label><label class="atuacao-search-label">Buscar destino ou ficha<input id="recurso-busca" type="search" placeholder="Ex.: hospital, asfalto, 1241"></label></div>
+        </section>
+        <div id="recursos-kpis" class="atuacao-kpis" aria-live="polite"></div>
+        <div class="atuacao-chart-grid">
+          <article class="card atuacao-chart-card"><div class="atuacao-card-title"><div><p class="eyebrow">Distribuição</p><h2>Valores por ano</h2></div><span class="help-wrap"><button class="help-button compact" type="button" aria-label="Explicação sobre valores por ano" aria-expanded="false" aria-describedby="help-valores-ano" data-help-button>?</button><span class="question-help" id="help-valores-ano" role="tooltip">Soma os valores informados nos registros que atendem aos filtros. Itens sem valor continuam na lista, mas não entram nas barras.</span></span></div><div id="recursos-chart-ano" class="atuacao-bar-chart"></div></article>
+          <article class="card atuacao-chart-card"><div class="atuacao-card-title"><div><p class="eyebrow">Comprovação</p><h2>Oficial e informal</h2></div><span class="help-wrap"><button class="help-button compact" type="button" aria-label="Explicação sobre comprovação" aria-expanded="false" aria-describedby="help-comprovacao" data-help-button>?</button><span class="question-help" id="help-comprovacao" role="tooltip">Oficial significa que o valor aparece em documento público. Isso não significa, por si só, que o recurso já foi pago ou executado.</span></span></div><div id="recursos-chart-proof" class="atuacao-horizontal-chart"></div></article>
+        </div>
+        <section class="card atuacao-detail-card" aria-labelledby="recursos-detalhes-title"><div class="atuacao-card-title"><div><p class="eyebrow">Registros da auditoria</p><h2 id="recursos-detalhes-title">Detalhes dos recursos</h2></div><strong id="recursos-count"></strong></div><div id="recursos-table" class="atuacao-records" aria-live="polite"></div></section>
+      </div>
+      <div id="atuacao-legislacao-panel" class="atuacao-panel" hidden>
+        <section class="atuacao-filter-card" aria-labelledby="legislacao-filtros-title"><div class="atuacao-filter-heading"><div><p class="eyebrow">Filtros combinados</p><h2 id="legislacao-filtros-title">Consulte leis e projetos</h2></div><button id="legislacao-limpar" class="text-button" type="button">Limpar filtros</button></div><div class="atuacao-filters legislation-filters"><label>Tipo<select id="legislacao-tipo"><option value="">Todos os tipos</option><option>Lei ordinária</option><option>Projeto de lei</option></select></label><label>Situação<select id="legislacao-status"><option value="">Todas as situações</option></select></label><label>Ano<select id="legislacao-ano"><option value="">Todos os anos</option></select></label><label class="atuacao-search-label">Buscar número ou assunto<input id="legislacao-busca" type="search" placeholder="Ex.: saúde, PL 22/2022"></label></div></section>
+        <div id="legislacao-kpis" class="atuacao-kpis legislation-kpis" aria-live="polite"></div>
+        <section class="card atuacao-detail-card" aria-labelledby="legislacao-detalhes-title"><div class="atuacao-card-title"><div><p class="eyebrow">Produção legislativa</p><h2 id="legislacao-detalhes-title">Leis e projetos em detalhes</h2></div><strong id="legislacao-count"></strong></div><div id="legislacao-table" class="atuacao-records" aria-live="polite"></div></section>
+      </div>
+      <p class="atuacao-footnote">A página preserva as diferenças entre valor comprovado, execução do recurso e atribuição política. Registros sem ano ou valor permanecem identificados como não informados.</p>
     </section>
 
     <section id="leis" class="view" aria-labelledby="laws-title" hidden>
@@ -3444,6 +3482,8 @@
   </script>
   <script src="supabase-config.js?v=5" defer></script>
   <script src="auth.js?v=5" defer></script>
-  <script src="app.js?v=9" defer></script>
+  <script src="atuacao-dados.js?v=1" defer></script>
+  <script src="atuacao.js?v=1" defer></script>
+  <script src="app.js?v=10" defer></script>
 </body>
 </html>

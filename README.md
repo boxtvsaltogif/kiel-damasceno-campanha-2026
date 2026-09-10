@@ -28,3 +28,9 @@ Sistema interno, simples e responsivo para preparar e executar a campanha em uma
 O repositório contém o código público do site, a chave pública de conexão e clipping agregado baseado em publicações abertas. As informações operacionais dinâmicas ficam protegidas por autenticação, controle de acesso e regras no banco de dados. Não registre senhas, documentos pessoais desnecessários, opinião política individual, religião, saúde ou outros dados sensíveis.
 
 A meta de 60 mil votos é administrativa e não representa previsão eleitoral. O sistema foi desenhado para dados agregados e territoriais, sem microdirecionamento persuasivo por atributos sensíveis. Toda ação eleitoral deve passar pela revisão jurídica da campanha e pelas regras vigentes do TSE e da LGPD.
+
+## Atualizar a página Atuação
+
+A página **Atuação** usa o arquivo leve `atuacao-dados.js`. Quando a planilha de auditoria for revisada, execute `scripts/importar-auditoria.py` informando o caminho do Excel e o destino `atuacao-dados.js`. O importador recalcula os filtros, indicadores e gráficos sem exigir edição manual da página.
+
+Antes de publicar uma atualização, confira os totais de leis, recursos oficiais e registros informais, abra a prévia nos três tamanhos testados pelo projeto e valide as fontes adicionadas.
