@@ -251,7 +251,7 @@ function renderTerritory(){
 let monitorDate='all';
 let monitorMetric='curtidas';
 let monitorStartDate='2026-08-12';
-let monitorEndDate='2026-09-06';
+let monitorEndDate='2026-09-10';
 let monitorNetwork='all';
 let monitorDataCache=null;
 const monitorNetworkNames={instagram:'Instagram',facebook:'Facebook',threads:'Threads',tiktok:'TikTok',youtube:'YouTube',x:'X'};
@@ -298,7 +298,7 @@ function renderMonitorKpis(data){
 function renderMonitorFilterSummary(data){
   const summary=document.querySelector('#monitor-filter-summary');
   const networkLabel=monitorNetwork==='all'?'todas as redes':monitorNetworkNames[monitorNetwork];
-  if(summary)summary.textContent=`Período selecionado: ${monitorStartDate.split('-').reverse().slice(0,2).join('/')} a ${monitorEndDate.split('-').reverse().join('/')} · ${monitorRangeRecords(data).length} datas de coleta · ${networkLabel} · fuso de Brasília`;
+  if(summary){const count=monitorRangeRecords(data).length;summary.textContent=`Período selecionado: ${monitorStartDate.split('-').reverse().slice(0,2).join('/')} a ${monitorEndDate.split('-').reverse().join('/')} · ${count} ${count===1?'data':'datas'} de coleta · ${networkLabel} · fuso de Brasília`}
   const chartNetwork=document.querySelector('#monitor-chart-network');
   if(chartNetwork)chartNetwork.textContent=monitorNetwork==='all'?'Todas as redes':monitorNetworkNames[monitorNetwork];
 }
@@ -310,6 +310,7 @@ function monitorDailyMetric(record,key){
     const map={curtidas:'curtidas',comentarios_negativos:'desfavoraveis',comentarios:'comentarios_exibidos',repostagens:'repostagens',visualizacoes_redes:'visualizacoes',visualizacoes_total:'visualizacoes'};
     return Number.isFinite(network[map[key]])?network[map[key]]:null;
   }
+  if(key==='comentarios'&&Number.isFinite(record.comentarios_unicos))return record.comentarios_unicos;
   if(key==='visualizacoes_redes')return Number.isFinite(record.visualizacoes_redes_proprias)?record.visualizacoes_redes_proprias:null;
   if(key==='visualizacoes_total')return Number.isFinite(record.visualizacoes_verificadas)?record.visualizacoes_verificadas:null;
   const stats=monitorDetailStats([record]);
@@ -353,7 +354,7 @@ function renderMonitorLineChart(data){
     const value=selected?monitorDailyMetric(selected,monitorMetric):null;
     summary.innerHTML=selected
       ?`<strong>${esc(config.label)}</strong><span>${Number.isFinite(value)?`${config.minimum?'≥ ':''}${Number(value).toLocaleString('pt-BR')} em ${esc(selected.rotulo)}`:`Não verificável em ${esc(selected.rotulo)}`}</span>`
-      :`<strong>${esc(config.label)}</strong><span>Linha compara ${chartHistory.length} fotografias · crescimento acumulado não verificável</span>`;
+      :`<strong>${esc(config.label)}</strong><span>Linha compara ${chartHistory.length} ${chartHistory.length===1?'fotografia':'fotografias'} · crescimento acumulado não verificável</span>`;
   }
 }
 function monitorDetailStats(records){
@@ -376,9 +377,16 @@ function renderMonitorDayDetail(data){
   if(!target)return;
   const records=selectedMonitorRecords(data),single=records.length===1?records[0]:null;
   const stats=monitorDetailStats(records.map(record=>monitorNetwork==='all'?record:{...record,redes:{[monitorNetwork]:record.redes?.[monitorNetwork]}}));
+  if(monitorNetwork==='all'){
+    const countFor=(record,uniqueField,metric)=>Number.isFinite(record[uniqueField])?record[uniqueField]:monitorDetailStats([record])[metric];
+    const uniqueComments=records.map(record=>countFor(record,'comentarios_unicos','comentarios_exibidos')).filter(Number.isFinite);
+    const reviewedComments=records.map(record=>countFor(record,'comentarios_revisados_unicos','comentarios_revisados')).filter(Number.isFinite);
+    stats.comentarios_exibidos=uniqueComments.length?uniqueComments.reduce((total,value)=>total+value,0):null;
+    stats.comentarios_revisados=reviewedComments.length?reviewedComments.reduce((total,value)=>total+value,0):null;
+  }
   const comments=monitorFilteredComments(records);
   const title=single?`${single.rotulo} · ${single.titulo}`:`Comentários de ${monitorStartDate.split('-').reverse().slice(0,2).join('/')} a ${monitorEndDate.split('-').reverse().join('/')}`;
-  const summary=single?single.resumo:`A seleção reúne ${records.length} datas e ${comments.length} textos relevantes salvos. As métricas são fotografias dos contadores e não formam um crescimento histórico confiável.`;
+  const summary=single?single.resumo:`A seleção reúne ${records.length} ${records.length===1?'data':'datas'} e ${comments.length} textos relevantes salvos. As métricas são fotografias dos contadores e não formam um crescimento histórico confiável.`;
   const statusText=single?(single.status==='verificado'?'Dados confirmados':single.status==='sem_item_localizado'?'Busca realizada · sem novo item localizado':'Não verificável'):`${monitorNetwork==='all'?'Todas as redes':monitorNetworkNames[monitorNetwork]}`;
   const statItems=[['Curtidas e reações',stats.curtidas],['Comentários exibidos',stats.comentarios_exibidos],['Textos abertos',stats.comentarios_revisados],['Favoráveis',stats.favoraveis],['Neutros ou mistos',stats.neutros],['Desfavoráveis',stats.desfavoraveis],['Recompartilhamentos',stats.repostagens],['Favoritos',stats.favoritos],['Visualizações exibidas',stats.visualizacoes]];
   const commentType=comment=>{const value=String(comment.valencia||'').toLowerCase();return value.startsWith('favor')?'positive':value.startsWith('desfavor')?'negative':'neutral'};
@@ -392,7 +400,9 @@ function renderMonitorDayDetail(data){
 }
 function verifiedDailyInteractions(record){
   if(record.status!=='verificado')return null;
-  const values=Object.values(record.redes||{}).flatMap(source=>[source?.curtidas,source?.comentarios_exibidos,source?.repostagens]).filter(Number.isFinite);
+  const values=Object.values(record.redes||{}).flatMap(source=>[source?.curtidas,source?.repostagens]).filter(Number.isFinite);
+  if(Number.isFinite(record.comentarios_unicos))values.push(record.comentarios_unicos);
+  else values.push(...Object.values(record.redes||{}).map(source=>source?.comentarios_exibidos).filter(Number.isFinite));
   return values.length?values.reduce((total,value)=>total+value,0):null;
 }
 function verifiedDailyViews(record){
